@@ -1,0 +1,15 @@
+---
+# Colecciones requeridas por el proyecto.
+# Instalar con:  ansible-galaxy collection install -r requirements.yml
+collections:
+  # firewalld, firewalld_info, seboolean, authorized_key
+  - name: ansible.posix
+    version: ">=1.5.4"
+
+  # mysql_db, mysql_user, mysql_query
+  - name: community.mysql
+    version: ">=3.10.0"
+
+  # ufw, timezone
+  - name: community.general
+    version: ">=8.0.0"

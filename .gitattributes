@@ -1,0 +1,9 @@
+# Editamos en Windows y ejecutamos en Linux. Sin esto, un CRLF que se cuela en un
+# archivo desplegado da errores muy dificiles de diagnosticar: MariaDB no parsea
+# "bind-address = 10.0.1.20\r" y bash tira "bad interpreter: /bin/bash^M".
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
