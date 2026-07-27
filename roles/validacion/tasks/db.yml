@@ -84,7 +84,7 @@
     that:
       - "'Status: active' in r_ufw.stdout"
       - "'deny (incoming)' in r_ufw.stdout"
-      - "db_port | string in r_ufw.stdout"
+      - "(db_port | string) in r_ufw.stdout"
       - "web_host in r_ufw.stdout"
     success_msg: "UFW activo, denegando entrante y con el 3306 abierto solo a {{ web_host }}."
     fail_msg: |-
