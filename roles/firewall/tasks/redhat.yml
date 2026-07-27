@@ -1,0 +1,46 @@
+---
+# firewalld en el servidor web. Se abren solo ssh y http.
+#
+# Sobre permanent + immediate: hay que poner los dos. Solo permanent escribe la
+# regla pero no la aplica hasta el proximo reload (la validacion del mismo
+# playbook fallaria). Solo immediate la aplica pero se pierde al reiniciar, y
+# ademas la tarea reporta changed en cada corrida. Los dos juntos es la unica
+# combinacion que es a la vez funcional e idempotente.
+
+- name: Instalar firewalld
+  ansible.builtin.dnf:
+    name: firewalld
+    state: present
+
+- name: Habilitar y arrancar firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: Permitir SSH
+  # Primero SSH, siempre. Es la conexion por la que Ansible esta trabajando.
+  ansible.posix.firewalld:
+    service: ssh
+    state: enabled
+    permanent: true
+    immediate: true
+
+- name: Permitir HTTP
+  ansible.posix.firewalld:
+    service: http
+    state: enabled
+    permanent: true
+    immediate: true
+
+- name: Cerrar los servicios que CentOS Stream abre de fabrica y no usamos
+  # La zona public viene con cockpit (consola web en el 9090) habilitado. La letra
+  # pide permitir unicamente lo necesario, y la consola web no lo es.
+  # dhcpv6-client se deja como esta a proposito: cerrarlo puede dejar al servidor
+  # sin direccion IPv6 y no aporta nada a la consigna.
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    state: disabled
+    permanent: true
+    immediate: true
+  loop: "{{ firewalld_servicios_a_cerrar }}"

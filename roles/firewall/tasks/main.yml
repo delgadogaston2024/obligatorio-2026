@@ -1,0 +1,16 @@
+---
+# Un solo rol para los dos firewalls, con una rama por familia de sistema
+# operativo. El criterio es el mismo en los dos: se abre unicamente lo que la
+# aplicacion necesita, nada mas.
+#
+# En site.yml este rol va DESPUES del rol funcional de cada servidor. Si algo
+# falla a mitad de camino, preferimos quedarnos sin la regla de firewall que sin
+# acceso SSH al servidor.
+
+- name: Configurar firewalld en el servidor web
+  ansible.builtin.include_tasks: redhat.yml
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Configurar UFW en el servidor de base de datos
+  ansible.builtin.include_tasks: debian.yml
+  when: ansible_facts['os_family'] == 'Debian'

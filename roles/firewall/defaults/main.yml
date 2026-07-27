@@ -1,0 +1,7 @@
+---
+ssh_port: 22
+
+# Servicios que firewalld habilita por defecto en la zona public y que esta
+# aplicacion no necesita.
+firewalld_servicios_a_cerrar:
+  - cockpit
