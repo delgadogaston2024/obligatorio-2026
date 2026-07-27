@@ -102,6 +102,7 @@ roles/
 docs/
   INSTALL.md             preparación inicial y frontera con el playbook
   uso-de-ia.md           citación del uso de IA
+  modificacion-individual.md  guía para la evaluación individual
   evidencias/            logs de las corridas y capturas
 ```
 
@@ -261,3 +262,6 @@ Declarado en [docs/uso-de-ia.md](docs/uso-de-ia.md), como pide la letra.
 |---|---|
 | Gastón Delgado | *(ver `git log --author`)* |
 | *(a completar)* | |
+
+La modificación individual de cada integrante, que la letra evalúa por separado,
+está guiada en [docs/modificacion-individual.md](docs/modificacion-individual.md).
