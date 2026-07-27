@@ -1,0 +1,74 @@
+---
+# Preparacion comun a los dos servidores: validaciones tempranas, paquetes base,
+# zona horaria y sincronizacion de hora.
+#
+# Todo lo que es especifico de un servicio (httpd, mariadb) vive en su propio rol.
+
+- name: Confirmar que cada servidor tiene el sistema operativo que espera el diseno
+  # Si las IPs del inventario estan invertidas, el despliegue igual "funciona" un
+  # rato y despues falla de forma confusa (dnf en Ubuntu, grupo wheel inexistente).
+  # Mejor cortar aca, con un mensaje que dice exactamente que pasa.
+  ansible.builtin.assert:
+    that:
+      - (inventory_hostname in groups['web'] and ansible_facts['os_family'] == 'RedHat')
+        or (inventory_hostname in groups['db'] and ansible_facts['os_family'] == 'Debian')
+    success_msg: >-
+      {{ inventory_hostname }}: {{ ansible_facts['distribution'] }}
+      {{ ansible_facts['distribution_version'] }}
+    fail_msg: >-
+      {{ inventory_hostname }} es {{ ansible_facts['distribution'] }} pero el
+      inventario lo pone en el grupo equivocado. El grupo [web] tiene que ser
+      CentOS Stream y el grupo [db] Ubuntu Server. Revisar inventory/hosts.ini:
+      probablemente esten invertidas las IPs.
+
+- name: Evaluar el secreto de la aplicacion sin exponerlo en la salida
+  # Se calcula un booleano y el assert de abajo solo ve ese booleano. Asi el
+  # mensaje de error sigue siendo legible sin necesidad de no_log en el assert
+  # (no_log oculta tambien el fail_msg, que es justo lo que uno quiere leer).
+  ansible.builtin.set_fact:
+    db_password_ok: >-
+      {{ (db_app_password | default('') | length >= 8)
+         and ('CAMBIAR' not in (db_app_password | default('CAMBIAR'))) }}
+  no_log: true
+
+- name: Confirmar que el vault esta cargado y con una password real
+  ansible.builtin.assert:
+    that:
+      - db_password_ok | bool
+    fail_msg: >-
+      Falta group_vars/all/vault.yml, o todavia tiene el valor de ejemplo, o la
+      password es de menos de 8 caracteres. Ver group_vars/all/vault.yml.example.
+
+- name: Instalar paquetes base en CentOS Stream
+  ansible.builtin.dnf:
+    name: "{{ common_packages_redhat }}"
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Actualizar el indice de paquetes en Ubuntu
+  # changed_when: false a proposito. Refrescar el indice no modifica el estado del
+  # servidor, y sin esto la segunda corrida reportaria "changed" apenas pase la
+  # hora de cache_valid_time, arruinando la evidencia de idempotencia.
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  changed_when: false
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Instalar paquetes base en Ubuntu
+  ansible.builtin.apt:
+    name: "{{ common_packages_debian }}"
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Fijar la zona horaria
+  # America/Montevideo para que los timestamps de los logs que entregamos como
+  # evidencia coincidan con la hora de la entrega.
+  community.general.timezone:
+    name: "{{ zona_horaria }}"
+
+- name: Habilitar y arrancar el servicio de sincronizacion de hora
+  ansible.builtin.service:
+    name: "{{ common_ntp_service }}"
+    state: started
+    enabled: true
