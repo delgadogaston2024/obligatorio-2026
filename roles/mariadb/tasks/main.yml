@@ -1,0 +1,143 @@
+---
+# Servidor de base de datos: MariaDB en Ubuntu Server.
+#
+# Nota sobre la autenticacion: NO se le pone password a root. En MariaDB, root se
+# autentica con el plugin unix_socket, asi que las tareas corren con become: true
+# y login_unix_socket. Ventajas: no hay un secreto mas que guardar, no hay
+# problema de huevo-y-gallina con .my.cnf, y se evita que mysql_user sobre root
+# reporte "changed" en cada corrida (MariaDB 10.4+ guarda multiples plugins de
+# autenticacion en mysql.global_priv y la deteccion de cambios se vuelve poco
+# fiable, lo que arruinaria la evidencia de idempotencia).
+#
+# Tampoco se corre mysql_secure_installation: es interactivo y no idempotente.
+# Lo que hace de util esta al final de este archivo, con modulos.
+
+- name: Instalar MariaDB y las dependencias de Python
+  ansible.builtin.apt:
+    name: "{{ db_packages }}"
+    state: present
+
+- name: Configurar MariaDB para aceptar conexiones desde el servidor web
+  ansible.builtin.template:
+    src: 99-ansible.cnf.j2
+    dest: "{{ mariadb_conf_dir }}/99-ansible.cnf"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar MariaDB
+
+- name: Habilitar y arrancar MariaDB
+  ansible.builtin.service:
+    name: "{{ mariadb_service }}"
+    state: started
+    enabled: true
+
+- name: Aplicar el reinicio pendiente antes de tocar la base
+  # Sin este flush los handlers correrian al final del play, y todas las tareas de
+  # abajo trabajarian contra la instancia que todavia escucha en 127.0.0.1.
+  ansible.builtin.meta: flush_handlers
+
+- name: Esperar a que MariaDB acepte conexiones por el socket local
+  ansible.builtin.wait_for:
+    path: "{{ mariadb_socket }}"
+    timeout: 30
+
+- name: Crear la base de datos
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    encoding: utf8mb4
+    collation: utf8mb4_unicode_ci
+    login_unix_socket: "{{ mariadb_socket }}"
+
+- name: Crear el directorio del esquema
+  ansible.builtin.file:
+    path: "{{ mariadb_schema_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Generar el esquema y los datos iniciales desde el template
+  ansible.builtin.template:
+    src: schema.sql.j2
+    dest: "{{ mariadb_schema_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+# --- Importacion controlada ------------------------------------------------
+# "mysql_db state=import" siempre reporta changed: el modulo no puede saber si el
+# script hizo algo. Dejarlo suelto rompe la idempotencia. Por eso se consulta
+# primero el estado real de la base y solo se importa si falta algo. El .sql es
+# ademas auto-idempotente (CREATE TABLE IF NOT EXISTS + INSERT IGNORE): doble red.
+
+- name: Consultar si la tabla ya existe
+  community.mysql.mysql_query:
+    login_db: information_schema
+    query: >-
+      SELECT COUNT(*) AS n FROM information_schema.tables
+      WHERE table_schema = %s AND table_name = %s
+    positional_args:
+      - "{{ db_name }}"
+      - "{{ db_table }}"
+    login_unix_socket: "{{ mariadb_socket }}"
+  register: r_tabla
+  changed_when: false
+  check_mode: false
+
+- name: Contar las filas ya cargadas
+  community.mysql.mysql_query:
+    login_db: "{{ db_name }}"
+    query: "SELECT COUNT(*) AS n FROM `{{ db_table }}`"
+    login_unix_socket: "{{ mariadb_socket }}"
+  register: r_filas
+  changed_when: false
+  check_mode: false
+  when: r_tabla.query_result[0][0].n | int > 0
+
+- name: Registrar el estado actual de la tabla
+  ansible.builtin.set_fact:
+    tabla_existe: "{{ r_tabla.query_result[0][0].n | int > 0 }}"
+    filas_actuales: "{{ 0 if r_filas.skipped | default(false) else r_filas.query_result[0][0].n }}"
+
+- name: Importar el esquema y los datos iniciales
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: import
+    target: "{{ mariadb_schema_file }}"
+    login_unix_socket: "{{ mariadb_socket }}"
+  when: >-
+    not tabla_existe | bool
+    or filas_actuales | int < cumpleanios_filas_esperadas | int
+
+- name: Crear el usuario de la aplicacion, con acceso solo desde el servidor web
+  # host es la IP de web, no '%': la app es el unico cliente legitimo.
+  # priv es solo SELECT: la app unicamente lee.
+  # update_password: on_create para que la tarea no reporte changed en cada
+  # corrida. Para rotar la password: cambiarla en el vault y correr
+  #   ansible-playbook site.yml -t db -e db_app_user_recrear=true
+  community.mysql.mysql_user:
+    name: "{{ db_app_user }}"
+    host: "{{ web_host }}"
+    password: "{{ db_app_password }}"
+    priv: "{{ db_name }}.*:{{ db_app_priv }}"
+    state: present
+    update_password: "{{ 'always' if db_app_user_recrear | default(false) | bool else 'on_create' }}"
+    login_unix_socket: "{{ mariadb_socket }}"
+  no_log: true
+
+# --- Endurecimiento equivalente a mysql_secure_installation, con modulos ----
+
+- name: Quitar los usuarios anonimos
+  community.mysql.mysql_user:
+    name: ""
+    host_all: true
+    state: absent
+    login_unix_socket: "{{ mariadb_socket }}"
+
+- name: Quitar la base de datos de prueba
+  community.mysql.mysql_db:
+    name: test
+    state: absent
+    login_unix_socket: "{{ mariadb_socket }}"

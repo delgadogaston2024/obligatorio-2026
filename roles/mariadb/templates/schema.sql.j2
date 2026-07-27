@@ -1,0 +1,33 @@
+-- ARCHIVO GENERADO POR ANSIBLE - no editar en el servidor.
+-- Origen: roles/mariadb/templates/schema.sql.j2
+--
+-- Reescritura de dbappphp/cumpleanios.sql, que no se podia usar tal cual:
+--
+--   1. Su primera linea, "DROP DATABASE cumples IF EXISTS;", es sintaxis
+--      invalida en MariaDB (el orden correcto es DROP DATABASE IF EXISTS).
+--      Tal cual estaba, el script fallaba en la linea 1.
+--   2. Aun corregido, un DROP DATABASE en cada corrida es lo contrario de la
+--      idempotencia que exige la letra: borraria los datos y reportaria cambios
+--      para siempre.
+--
+-- Este script se puede correr N veces y el estado final es identico.
+
+CREATE DATABASE IF NOT EXISTS `{{ db_name }}`
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE `{{ db_name }}`;
+
+CREATE TABLE IF NOT EXISTS `{{ db_table }}` (
+  id     INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  fecha  DATE         NOT NULL,
+  -- Sin esta clave unica, INSERT IGNORE no tiene contra que comparar y volveria
+  -- a insertar las mismas personas en cada importacion.
+  UNIQUE KEY uq_persona (nombre, fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Las filas salen de la variable cumpleanios_seed (group_vars/all/main.yml).
+INSERT IGNORE INTO `{{ db_table }}` (nombre, fecha) VALUES
+{% for persona in cumpleanios_seed %}
+  ('{{ persona.nombre | replace("'", "''") }}', '{{ persona.fecha }}'){{ ';' if loop.last else ',' }}
+{% endfor %}

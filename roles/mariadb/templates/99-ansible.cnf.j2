@@ -1,0 +1,13 @@
+# ARCHIVO GENERADO POR ANSIBLE - no editar en el servidor.
+# Origen: roles/mariadb/templates/99-ansible.cnf.j2
+#
+# Se usa un drop-in propio en vez de modificar 50-server.cnf, que es un conffile
+# de dpkg: editarlo hace que cada "apt upgrade" pregunte que version conservar.
+# Los archivos de {{ mariadb_conf_dir }} se leen en orden alfabetico, asi que el
+# prefijo 99 garantiza que este bind-address le gane al default de Ubuntu
+# (127.0.0.1), que es lo que impide la conexion remota que pide la letra.
+
+[mysqld]
+# IP concreta del servidor, no 0.0.0.0: se escucha solo donde hace falta.
+bind-address = {{ mariadb_bind_address }}
+port         = {{ db_port }}
