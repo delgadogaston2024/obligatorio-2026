@@ -1,0 +1,22 @@
+---
+# Servidor de base de datos: Ubuntu Server con MariaDB.
+
+# En Debian/Ubuntu el sudoers base habilita %sudo; en la familia RHEL, %wheel.
+admin_group: sudo
+
+mariadb_service: mariadb
+mariadb_socket: /run/mysqld/mysqld.sock
+mariadb_conf_dir: /etc/mysql/mariadb.conf.d
+
+# Se escucha en la IP concreta del servidor, no en 0.0.0.0: es lo minimo
+# necesario para que la conexion desde el server web funcione.
+mariadb_bind_address: "{{ db_host }}"
+
+# Donde queda el esquema renderizado en el servidor.
+mariadb_schema_dir: /usr/local/share/cumples
+mariadb_schema_file: /usr/local/share/cumples/schema.sql
+
+db_packages:
+  - mariadb-server
+  - mariadb-client      # community.mysql invoca el binario mysql para state=import
+  - python3-pymysql     # requerido por todos los modulos community.mysql

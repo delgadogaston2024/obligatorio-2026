@@ -1,0 +1,24 @@
+---
+# PLANTILLA. El archivo real es group_vars/all/vault.yml y va CIFRADO con
+# ansible-vault, porque la letra prohibe versionar contrasenas reales.
+#
+# Crearlo asi (en el nodo de control, una sola vez):
+#
+#   # 1. Passphrase del vault, FUERA del repositorio
+#   mkdir -p ~/.ansible
+#   printf '%s\n' 'LA-PASSPHRASE-QUE-ELIJAS' > ~/.ansible/vault_pass_cumples
+#   chmod 600 ~/.ansible/vault_pass_cumples
+#
+#   # 2. Archivo de secretos, cifrado
+#   cp group_vars/all/vault.yml.example group_vars/all/vault.yml
+#   #    editar el valor de vault_db_app_password
+#   ansible-vault encrypt group_vars/all/vault.yml
+#
+# Para editarlo despues:  ansible-vault edit group_vars/all/vault.yml
+# Para verlo:             ansible-vault view group_vars/all/vault.yml
+#
+# ansible.cfg ya apunta vault_password_file a ~/.ansible/vault_pass_cumples,
+# asi que los playbooks corren sin pedir la passphrase.
+
+# Password del usuario de MariaDB que usa la aplicacion.
+vault_db_app_password: "CAMBIAR-POR-UNA-PASSWORD-REAL"

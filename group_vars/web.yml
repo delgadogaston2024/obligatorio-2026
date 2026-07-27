@@ -1,0 +1,33 @@
+---
+# Servidor de aplicacion: CentOS Stream 9 con Apache + PHP.
+
+# En la familia RHEL el sudoers base habilita %wheel; en Debian/Ubuntu, %sudo.
+admin_group: wheel
+
+apache_user: apache
+apache_group: apache
+
+# DocumentRoot de la aplicacion.
+app_root: /var/www/html/cumples
+app_entry_file: cumple.php
+
+# Las credenciales de la base viven FUERA del DocumentRoot, para que ninguna URL
+# pueda llegar a servirlas si algun dia PHP deja de interpretar el archivo.
+app_private_dir: /var/www/private/cumples
+app_config_file: db_config.php
+
+# En RHEL 9 / CentOS Stream 9 no existe mod_php: "dnf install php" trae php-fpm y
+# httpd le hace proxy. Hay que habilitar y arrancar los dos servicios.
+web_packages:
+  - httpd
+  - php
+  - php-fpm
+  - php-mysqlnd
+  - python3-libselinux    # requerido por ansible.posix.seboolean
+  - python3-libsemanage   # requerido por el manejo persistente de booleanos
+  - python3-firewall      # requerido por ansible.posix.firewalld
+  - policycoreutils-python-utils  # ausearch/semanage, para diagnosticar AVC
+
+web_services:
+  - php-fpm
+  - httpd

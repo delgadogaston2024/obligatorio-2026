@@ -1,0 +1,37 @@
+---
+# Variables compartidas por los dos servidores.
+# Todo lo que cambia entre equipos se toca aca, no dentro de los roles.
+
+# Usuario de automatizacion. Lo crea bootstrap.yml y es el que usa site.yml.
+bootstrap_user: ansible
+ansible_user: "{{ bootstrap_user }}"
+ansible_python_interpreter: /usr/bin/python3
+
+# Clave PUBLICA del nodo de control, que bootstrap.yml instala en los dos
+# servidores. La privada vive solo en la VM y nunca entra al repositorio.
+bootstrap_pubkey_file: "{{ lookup('ansible.builtin.env', 'HOME') }}/.ssh/id_ed25519.pub"
+
+zona_horaria: America/Montevideo
+
+# --- Identidad de la aplicacion y de la base de datos ---------------------
+# Estos nombres reconcilian las tres variantes inconsistentes del codigo que
+# entrega la letra (ver README.md, "Reconciliacion del codigo original").
+db_name: cumples
+db_table: cumpleanios
+db_app_user: intranet_user
+db_app_password: "{{ vault_db_app_password }}"
+db_port: 3306
+
+# --- Direcciones ----------------------------------------------------------
+# Se derivan del inventario a proposito. No usar ansible_default_ipv4: con dos
+# interfaces de red devuelve la equivocada la mitad de las veces.
+web_host: "{{ hostvars[groups['web'][0]].ansible_host }}"
+db_host: "{{ hostvars[groups['db'][0]].ansible_host }}"
+
+# --- Datos iniciales de la tabla -----------------------------------------
+# Agregar o cambiar filas aca: el esquema es idempotente y las carga sin
+# duplicar. Este es el lugar natural para la modificacion individual.
+cumpleanios_seed:
+  - { nombre: "Frodo Baggins", fecha: "2005-01-14" }
+  - { nombre: "Aragorn", fecha: "2004-02-09" }
+  - { nombre: "Arwen Undomiel", fecha: "1994-12-09" }
