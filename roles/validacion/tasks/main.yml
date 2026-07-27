@@ -1,0 +1,14 @@
+---
+# La letra pide "validaciones basicas". Estas van mas alla: comprueban el
+# resultado, no el procedimiento. Si todas pasan, la aplicacion funciona.
+#
+# Se despacha por grupo de inventario porque cada servidor tiene que comprobar
+# cosas distintas.
+
+- name: Validar el servidor de base de datos
+  ansible.builtin.include_tasks: db.yml
+  when: inventory_hostname in groups['db']
+
+- name: Validar el servidor de aplicacion
+  ansible.builtin.include_tasks: web.yml
+  when: inventory_hostname in groups['web']

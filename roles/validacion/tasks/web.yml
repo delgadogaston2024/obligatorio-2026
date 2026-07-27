@@ -1,0 +1,126 @@
+---
+# Validaciones del servidor de aplicacion, y la prueba de punta a punta.
+
+- name: Recolectar el estado de los servicios
+  ansible.builtin.service_facts:
+
+- name: Confirmar que php-fpm y Apache estan corriendo y habilitados al arranque
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.services['php-fpm.service'].state == 'running'
+      - ansible_facts.services['php-fpm.service'].status == 'enabled'
+      - ansible_facts.services['httpd.service'].state == 'running'
+      - ansible_facts.services['httpd.service'].status == 'enabled'
+    success_msg: "php-fpm y httpd corriendo y habilitados al arranque."
+    fail_msg: >-
+      Falta uno de los dos servicios. En CentOS Stream 9 no hay mod_php: httpd
+      necesita php-fpm arriba o devuelve 503. Revisar:
+      systemctl status php-fpm httpd
+
+- name: Confirmar que SELinux sigue en enforcing
+  # Se valida explicitamente porque la tentacion de "arreglar" el error de
+  # conexion con setenforce 0 es enorme, y desactivarlo seria una perdida de
+  # puntos en la defensa. La solucion correcta es el booleano de abajo.
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['selinux']['status'] == 'enabled'
+      - ansible_facts['selinux']['mode'] == 'enforcing'
+    success_msg: "SELinux en enforcing, como corresponde."
+    fail_msg: >-
+      SELinux quedo en {{ ansible_facts['selinux']['mode'] | default('desconocido') }}.
+      No hay que desactivarlo: el booleano httpd_can_network_connect_db alcanza.
+
+- name: Leer el booleano de SELinux que habilita la conexion a la base remota
+  # Con slurp en vez de "getsebool", para no usar command donde hay otra opcion.
+  # El archivo tiene dos campos: valor actual y valor pendiente. Los dos deben
+  # ser 1; si el pendiente es 1 y el actual 0, falto el persistent/reload.
+  ansible.builtin.slurp:
+    src: /sys/fs/selinux/booleans/httpd_can_network_connect_db
+  register: r_booleano
+
+- name: Confirmar que Apache y PHP pueden conectarse a la base remota
+  ansible.builtin.assert:
+    that:
+      - (r_booleano.content | b64decode).split() | map('int') | list == [1, 1]
+    success_msg: "httpd_can_network_connect_db habilitado y persistido."
+    fail_msg: >-
+      El booleano httpd_can_network_connect_db esta en
+      "{{ r_booleano.content | b64decode | trim }}" (actual y pendiente). Sin esto
+      la pagina carga pero PHP no puede abrir el socket hacia MariaDB, y el log de
+      Apache no lo menciona: hay que mirar ausearch -m avc -ts recent
+
+- name: Confirmar que el servidor web alcanza el 3306 del servidor de base de datos
+  # Esta tarea corre EN web, asi que atraviesa el UFW de db de verdad. Es la
+  # prueba de que la conexion es remota, no un localhost disfrazado.
+  ansible.builtin.wait_for:
+    host: "{{ db_host }}"
+    port: "{{ db_port }}"
+    timeout: 10
+    state: started
+
+- name: Consultar el estado de firewalld
+  ansible.posix.firewalld_info:
+    active_zones: true
+  register: r_firewalld
+
+- name: Confirmar que el servidor web abre http y ssh, y nada de base de datos
+  ansible.builtin.assert:
+    that:
+      - "'http' in servicios_abiertos"
+      - "'ssh' in servicios_abiertos"
+      - "'mysql' not in servicios_abiertos"
+      - "'cockpit' not in servicios_abiertos"
+      - puertos_abiertos | select('search', db_port | string) | list | length == 0
+    success_msg: "firewalld abre {{ servicios_abiertos | join(', ') }}."
+    fail_msg: >-
+      firewalld no quedo como se espera. Servicios abiertos:
+      {{ servicios_abiertos | join(', ') }}. Puertos sueltos:
+      {{ puertos_abiertos | join(', ') }}.
+  vars:
+    servicios_abiertos: >-
+      {{ r_firewalld.firewalld_info.zones.values()
+         | map(attribute='services') | flatten | unique | list }}
+    puertos_abiertos: >-
+      {{ r_firewalld.firewalld_info.zones.values()
+         | map(attribute='ports') | flatten | list }}
+
+# --- Prueba de punta a punta ----------------------------------------------
+# La validacion mas importante de todo el proyecto.
+#
+# delegate_to al servidor de base de datos NO es un detalle: el nodo de control es
+# la propia VM CentOS, asi que un uri desde localhost saldria por la interfaz loop
+# sin pasar por firewalld y daria un falso positivo con el puerto 80 cerrado.
+# Pegandole desde db se prueba tambien la regla de firewalld.
+
+- name: Pedir la pagina de la aplicacion desde el servidor de base de datos
+  ansible.builtin.uri:
+    url: "http://{{ web_host }}/"
+    return_content: true
+    status_code: 200
+    timeout: 15
+  delegate_to: "{{ groups['db'][0] }}"
+  become: false
+  changed_when: false
+  check_mode: false
+  register: r_pagina
+
+- name: Confirmar que la aplicacion muestra los cumpleanos de la base
+  ansible.builtin.assert:
+    that:
+      - "'Lista de Cumpleaños' in r_pagina.content"
+      - "'Error de conexi' not in r_pagina.content"
+      - "'Error de consulta' not in r_pagina.content"
+      - faltantes | length == 0
+    success_msg: >-
+      La aplicacion responde por HTTP desde otro host y lista las
+      {{ cumpleanios_seed | length }} personas de la base. Despliegue verificado.
+    fail_msg: |-
+      La pagina responde pero el contenido no es el esperado.
+      Faltan en la salida: {{ faltantes | map(attribute='nombre') | join(', ') }}
+      Revisar en este orden:
+        1. ausearch -m avc -ts recent          (SELinux bloqueando la conexion)
+        2. tail /var/log/httpd/cumples-error.log
+        3. ss -ltnp | grep {{ db_port }}       en {{ db_host }}
+        4. el GRANT del usuario {{ db_app_user }} para {{ web_host }}
+  vars:
+    faltantes: "{{ cumpleanios_seed | rejectattr('nombre', 'in', r_pagina.content) | list }}"

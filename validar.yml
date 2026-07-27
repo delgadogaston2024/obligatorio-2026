@@ -1,0 +1,26 @@
+---
+# Validaciones del despliegue. site.yml lo importa al final, y tambien se puede
+# correr suelto, sin tocar nada:
+#
+#   ansible-playbook validar.yml
+#
+# Ninguna tarea de este playbook modifica los servidores: todas leen y comparan.
+#
+# El orden de los plays importa. Primero se valida la base, porque si la tabla no
+# tiene datos la prueba de punta a punta falla por una razon que no es la web.
+
+- name: Validar el servidor de base de datos
+  hosts: db
+  become: true
+  gather_facts: true
+  tags: [validar]
+  roles:
+    - role: validacion
+
+- name: Validar el servidor de aplicacion y la aplicacion de punta a punta
+  hosts: web
+  become: true
+  gather_facts: true
+  tags: [validar]
+  roles:
+    - role: validacion
