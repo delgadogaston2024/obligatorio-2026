@@ -1,0 +1,47 @@
+<?php
+// ARCHIVO GENERADO POR ANSIBLE - no editar en el servidor.
+// Origen: roles/webapp/templates/cumple.php.j2
+//
+// Se mantiene lo mas cerca posible del cumple.php original de dbappphp. Los
+// cambios son solo los necesarios:
+//   1. Las credenciales salen de un archivo aparte, fuera del DocumentRoot, en
+//      vez de estar escritas en el codigo.
+//   2. El nombre de la tabla es el real ({{ db_table }}). El original consultaba
+//      "cumpleaños", una tabla que el .sql nunca crea.
+//   3. Si falla la conexion, el detalle va al log de Apache en vez de imprimirse:
+//      el mensaje de mysqli incluye usuario y host, y esta pagina es justo la que
+//      va en las capturas de la entrega.
+//   4. Charset utf8mb4 explicito, para que la ñ de "Cumpleaños" se vea bien.
+
+require '{{ app_private_dir }}/{{ app_config_file }}';
+
+header('Content-Type: text/html; charset=utf-8');
+
+$conexion = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME, $DB_PORT);
+
+if ($conexion->connect_error) {
+    error_log('cumples: no se pudo conectar a MariaDB en ' . $DB_HOST . ': ' . $conexion->connect_error);
+    http_response_code(503);
+    die("Error de conexión: revisar el log de Apache.");
+}
+
+$conexion->set_charset('utf8mb4');
+
+$resultado = $conexion->query("SELECT nombre, fecha FROM `{$DB_TABLE}` ORDER BY MONTH(fecha), DAY(fecha)");
+
+if (!$resultado) {
+    error_log('cumples: fallo la consulta: ' . $conexion->error);
+    http_response_code(500);
+    die("Error de consulta: revisar el log de Apache.");
+}
+
+echo "<h1>Lista de Cumpleaños</h1>";
+echo "<table border='1'><tr><th>Nombre</th><th>Fecha</th></tr>";
+
+while ($fila = $resultado->fetch_assoc()) {
+    echo "<tr><td>" . htmlspecialchars($fila['nombre']) . "</td><td>" . htmlspecialchars($fila['fecha']) . "</td></tr>";
+}
+
+echo "</table>";
+
+$conexion->close();

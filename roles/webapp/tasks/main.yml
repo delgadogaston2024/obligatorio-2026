@@ -1,0 +1,100 @@
+---
+# Servidor de aplicacion: Apache + PHP en CentOS Stream 9.
+
+- name: Instalar Apache, PHP y las dependencias de Python
+  ansible.builtin.dnf:
+    name: "{{ web_packages }}"
+    state: present
+
+# --- SELinux ---------------------------------------------------------------
+# SELinux se deja en enforcing. Con la politica por defecto, Apache y PHP NO
+# pueden abrir conexiones TCP salientes: la pagina carga pero da error de
+# conexion, y el log de Apache no menciona SELinux (hay que mirar
+# "ausearch -m avc"). Es la forma numero uno en que este despliegue falla.
+#
+# Se habilita httpd_can_network_connect_db y no httpd_can_network_connect, que es
+# mucho mas amplio: este booleano solo permite salir hacia puertos de base de datos.
+
+- name: Permitir que Apache y PHP se conecten a la base de datos remota
+  ansible.posix.seboolean:
+    name: httpd_can_network_connect_db
+    state: true
+    persistent: true
+
+# --- Directorios -----------------------------------------------------------
+
+- name: Crear el DocumentRoot de la aplicacion
+  ansible.builtin.file:
+    path: "{{ app_root }}"
+    state: directory
+    owner: root
+    group: "{{ apache_group }}"
+    mode: "0750"
+    setype: httpd_sys_content_t
+
+- name: Crear el directorio privado de credenciales
+  # Fuera del DocumentRoot: ninguna URL puede llegar hasta aca.
+  ansible.builtin.file:
+    path: "{{ app_private_dir }}"
+    state: directory
+    owner: root
+    group: "{{ apache_group }}"
+    mode: "0750"
+    setype: httpd_sys_content_t
+
+# --- Despliegue de la aplicacion -------------------------------------------
+
+- name: Desplegar las credenciales de la base de datos
+  # no_log porque el diff de esta tarea mostraria la password, y la salida del
+  # playbook es justamente lo que se entrega como evidencia.
+  # root:apache 0640: apache la puede leer, ningun otro usuario del sistema.
+  ansible.builtin.template:
+    src: db_config.php.j2
+    dest: "{{ app_private_dir }}/{{ app_config_file }}"
+    owner: root
+    group: "{{ apache_group }}"
+    mode: "0640"
+    setype: httpd_sys_content_t
+  no_log: true
+
+- name: Desplegar la aplicacion
+  ansible.builtin.template:
+    src: cumple.php.j2
+    dest: "{{ app_root }}/{{ app_entry_file }}"
+    owner: root
+    group: "{{ apache_group }}"
+    mode: "0640"
+    setype: httpd_sys_content_t
+
+- name: Configurar el VirtualHost
+  ansible.builtin.template:
+    src: cumples.conf.j2
+    dest: /etc/httpd/conf.d/cumples.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar Apache
+
+- name: Validar la configuracion de Apache
+  # Una de las dos unicas tareas del proyecto que usa command, y es de solo
+  # lectura. No se puede reemplazar por "validate: httpd -t -f %s" en la tarea de
+  # arriba: eso valida el archivo como si fuera el httpd.conf principal, sin los
+  # modulos cargados, y falla siempre.
+  ansible.builtin.command:
+    cmd: httpd -t
+  changed_when: false
+  check_mode: false
+
+- name: Habilitar y arrancar php-fpm y Apache
+  # El orden de web_services importa: php-fpm primero, porque httpd le hace proxy
+  # a su socket. Al reves, Apache arranca y devuelve 503 hasta el proximo reinicio.
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop: "{{ web_services }}"
+
+- name: Aplicar la recarga pendiente de Apache
+  # Con los servicios ya arriba, para que el handler "reloaded" tenga a quien
+  # recargar y las validaciones de validar.yml corran contra la config final.
+  ansible.builtin.meta: flush_handlers

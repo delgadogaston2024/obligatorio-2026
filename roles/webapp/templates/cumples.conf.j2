@@ -1,0 +1,25 @@
+# ARCHIVO GENERADO POR ANSIBLE - no editar en el servidor.
+# Origen: roles/webapp/templates/cumples.conf.j2
+#
+# En CentOS Stream 9 no existe mod_php: /etc/httpd/conf.d/php.conf define a nivel
+# de servidor un SetHandler hacia el socket de php-fpm, y los VirtualHost lo
+# heredan. Por eso este archivo no configura nada de PHP, pero php-fpm tiene que
+# estar corriendo o Apache devuelve 503.
+
+<VirtualHost *:80>
+    ServerName {{ web_host }}
+    DocumentRoot {{ app_root }}
+
+    # La letra pide llegar a la app por la raiz del sitio, sin escribir el nombre
+    # del archivo en la URL.
+    DirectoryIndex {{ app_entry_file }}
+
+    <Directory {{ app_root }}>
+        Options -Indexes +FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    ErrorLog  logs/cumples-error.log
+    CustomLog logs/cumples-access.log combined
+</VirtualHost>

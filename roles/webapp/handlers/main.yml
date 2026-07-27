@@ -1,0 +1,7 @@
+---
+- name: Recargar Apache
+  # reloaded y no restarted: no hace falta cortar las conexiones para releer un
+  # VirtualHost, y en la corrida de la defensa se nota.
+  ansible.builtin.service:
+    name: httpd
+    state: reloaded
