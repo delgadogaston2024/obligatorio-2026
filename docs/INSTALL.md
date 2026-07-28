@@ -76,7 +76,7 @@ printf 'una-passphrase-larga\n' > ~/.ansible/vault_pass_cumples
 chmod 600 ~/.ansible/vault_pass_cumples
 
 cp group_vars/all/vault.yml.example group_vars/all/vault.yml
-vi group_vars/all/vault.yml          # poner la password real de intranet_user
+nano group_vars/all/vault.yml        # poner la password real de intranet_user
 ansible-vault encrypt group_vars/all/vault.yml
 ```
 
@@ -98,7 +98,7 @@ rol `common` lo detecta en la primera tarea y corta con un mensaje explícito.
 Hay dos formas de dejarlas puestas, y no son excluyentes:
 
 ```bash
-vi inventory/hosts.ini
+nano inventory/hosts.ini
 ```
 
 Esto queda escrito en el repo, así que sirve también para el próximo despliegue

@@ -54,12 +54,12 @@ ansible-galaxy collection install -r requirements.yml
 
 ```bash
 # 1. Poner las IPs reales de las dos VMs (para este despliegue y los siguientes)
-vi inventory/hosts.ini
+nano inventory/hosts.ini
 
 # 2. Cargar la password de la aplicación en el vault (una sola vez)
 #    El procedimiento completo está en group_vars/all/vault.yml.example
 cp group_vars/all/vault.yml.example group_vars/all/vault.yml
-vi group_vars/all/vault.yml
+nano group_vars/all/vault.yml
 ansible-vault encrypt group_vars/all/vault.yml
 
 # 3. Preparar el acceso de Ansible a los dos servidores (una sola vez)
