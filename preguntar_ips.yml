@@ -18,19 +18,23 @@
   become: false
   tags: [always]
   vars_prompt:
+    # El default de vars_prompt se templa ANTES de que hostvars este disponible
+    # en este play, asi que no puede leer la IP actual del inventario aca. Por
+    # eso el default queda vacio, y la IP del inventario se aplica despues, en
+    # la primera tarea, donde hostvars si existe.
     - name: ip_web
       prompt: "IP de la VM CentOS / servidor web (Enter para mantener la del inventario)"
-      default: "{{ hostvars[groups['web'][0]].ansible_host }}"
+      default: ""
       private: false
     - name: ip_db
       prompt: "IP de la VM Ubuntu / servidor de base de datos (Enter para mantener la del inventario)"
-      default: "{{ hostvars[groups['db'][0]].ansible_host }}"
+      default: ""
       private: false
   tasks:
-    - name: Usar esa IP para el resto de la corrida
+    - name: Usar la IP indicada, o si quedo vacia la que ya tiene el inventario
       ansible.builtin.add_host:
         name: "{{ item.host }}"
-        ansible_host: "{{ item.ip }}"
+        ansible_host: "{{ item.ip if item.ip | length > 0 else hostvars[item.host].ansible_host }}"
       loop:
         - { host: "{{ groups['web'][0] }}", ip: "{{ ip_web }}" }
         - { host: "{{ groups['db'][0] }}", ip: "{{ ip_db }}" }
