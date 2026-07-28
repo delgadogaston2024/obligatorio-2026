@@ -105,6 +105,7 @@ inventory/hosts.ini      hosts "web" y "db" dentro del grupo [servidores]
 group_vars/
   all/main.yml           variables de la aplicación y de la base
   all/vault.yml          password real, cifrada con ansible-vault
+host_vars/
   web.yml, db.yml        variables propias de cada servidor
 roles/
   common/                validaciones tempranas, paquetes base, zona horaria, NTP
@@ -121,8 +122,8 @@ docs/
 
 ## Variables
 
-Todo lo que cambia entre equipos está en `group_vars/`, no dentro de los roles.
-Las principales, en `group_vars/all/main.yml`:
+Todo lo que cambia entre equipos está en `group_vars/`/`host_vars/`, no dentro
+de los roles. Las principales, en `group_vars/all/main.yml`:
 
 | Variable | Valor | Para qué |
 |---|---|---|

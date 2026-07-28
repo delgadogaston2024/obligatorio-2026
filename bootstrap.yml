@@ -35,6 +35,18 @@
         state: present
       become: true
 
+    - name: Registrar el fingerprint SSH de cada servidor antes de conectar
+      # sshpass no puede responder el prompt interactivo "are you sure you
+      # want to continue connecting" (eso es lo que separa "-k" de una clave):
+      # si el host no esta todavia en known_hosts, la conexion falla directo
+      # con "Host Key checking is enabled and sshpass does not support this",
+      # sin llegar siquiera a pedir la password.
+      ansible.builtin.known_hosts:
+        name: "{{ hostvars[item].ansible_host }}"
+        key: "{{ lookup('ansible.builtin.pipe', 'ssh-keyscan -T 5 ' + hostvars[item].ansible_host) }}"
+        state: present
+      loop: "{{ groups['servidores'] }}"
+
     - name: Confirmar que se indico el usuario SSH inicial
       ansible.builtin.assert:
         that:

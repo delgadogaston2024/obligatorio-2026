@@ -168,9 +168,13 @@ síntoma es un `SyntaxError` o `ModuleNotFoundError` justo acá, mientras `web`
 (que se administra a sí mismo) sigue funcionando perfecto -- no hace falta un
 `ping` de prueba aparte, el error sale igual de claro en esta misma corrida.
 
-También puede preguntar si confiar en el fingerprint SSH de cada host (`Are you
-sure you want to continue connecting...`). Es normal la primera vez; responder
-`yes` lo agrega a `known_hosts` y no vuelve a preguntar en corridas posteriores.
+Antes de conectarse, también registra el fingerprint SSH de `web` y `db` en
+`known_hosts` (con el módulo `known_hosts`, corriendo `ssh-keyscan` desde el
+propio nodo de control). No es cosmético: `sshpass` **no puede** responder el
+prompt interactivo `Are you sure you want to continue connecting...` que SSH
+hace la primera vez que ve un host nuevo -- si esa tarea no llegara a correr,
+la conexión con `-k` falla directo con `Host Key checking is enabled and
+sshpass does not support this`, sin llegar siquiera a pedir la password.
 
 Deja en los dos servidores: el usuario `ansible`, la clave pública del nodo de
 control y `/etc/sudoers.d/90-ansible` con `NOPASSWD`. Termina verificando que puede
