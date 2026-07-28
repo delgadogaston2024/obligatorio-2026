@@ -91,13 +91,34 @@ head -1 group_vars/all/vault.yml     # tiene que decir $ANSIBLE_VAULT;1.1;AES256
 
 ### 5. Poner las IPs en el inventario
 
+Son los dos únicos valores que dependen del entorno. Importa no invertirlos: el
+grupo `[web]` es la VM CentOS y el grupo `[db]` la VM Ubuntu. Si se invierten, el
+rol `common` lo detecta en la primera tarea y corta con un mensaje explícito.
+
+Hay dos formas de dejarlas puestas, y no son excluyentes:
+
 ```bash
 vi inventory/hosts.ini
 ```
 
-Son los dos únicos valores que dependen del entorno. Importa no invertirlos: el
-grupo `[web]` es la VM CentOS y el grupo `[db]` la VM Ubuntu. Si se invierten, el
-rol `common` lo detecta en la primera tarea y corta con un mensaje explícito.
+Esto queda escrito en el repo, así que sirve también para el próximo despliegue
+contra las mismas VMs. La alternativa es no tocar el archivo y dejar que
+`bootstrap.yml`/`site.yml` la pregunten al arrancar (lo hace `preguntar_ips.yml`,
+importado como primer play de los dos): al ejecutar, piden la IP de cada VM y, si
+se responde vacío (Enter), usan la que ya está en el inventario. Sirve para
+reusar este mismo repo contra **otro** par de VMs sin editar nada.
+
+Para correr sin que pregunte nada -- necesario al capturar las evidencias, para
+que el log quede limpio -- se pasan las IPs por línea de comandos, algo que
+Ansible entiende sin pedirlas de nuevo:
+
+```bash
+ansible-playbook site.yml -e ip_web=<IP de la VM CentOS> -e ip_db=<IP de la VM Ubuntu>
+```
+
+Si las IPs del inventario ya son las correctas, alcanza con correr
+`ansible-playbook site.yml` sin nada más: igual pregunta, pero el valor por
+default (Enter) es el que ya está en `inventory/hosts.ini`.
 
 ### 6. Comprobar la conectividad antes de seguir
 
@@ -121,6 +142,10 @@ ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=<usuario_existente>
 - `-K` pide el password de `sudo`
 - `bootstrap_ssh_user` es el usuario que ya existe en las VMs
 
+Antes de pedir esos dos passwords, también pregunta la IP de cada VM (default:
+la que ya está en `inventory/hosts.ini`). Para saltear esa pregunta en una
+corrida repetida: agregar `-e ip_web=<IP> -e ip_db=<IP>` al comando de arriba.
+
 Deja en los dos servidores: el usuario `ansible`, la clave pública del nodo de
 control y `/etc/sudoers.d/90-ansible` con `NOPASSWD`. Termina verificando que puede
 escalar a root sin prompts.
@@ -137,8 +162,12 @@ que la evidencia de idempotencia sea un log limpio.
 ### 8. Desplegar
 
 ```bash
-ansible-playbook site.yml
+ansible-playbook site.yml -e ip_web=<IP de web01> -e ip_db=<IP de db01>
 ```
+
+Pasar las IPs con `-e` evita que pregunte nada (ver punto 5); si el inventario
+ya tiene las correctas, `ansible-playbook site.yml` a secas también funciona,
+solo que va a preguntar y aceptar el default con Enter.
 
 ## Verificación manual
 
@@ -156,11 +185,17 @@ Y la prueba que importa: abrir `http://<IP de web01>/` en el navegador de Window
 
 ## Captura de evidencias
 
+Con `-e ip_web=... -e ip_db=...` en las cuatro corridas: así ninguna se detiene a
+preguntar la IP y el log queda limpio de principio a fin.
+
 ```bash
-ansible-playbook site.yml    | tee docs/evidencias/01-primera-corrida.txt
-ansible-playbook site.yml    | tee docs/evidencias/02-segunda-corrida.txt
-ansible-playbook site.yml --check --diff | tee docs/evidencias/03-check-mode.txt
-ansible-playbook validar.yml | tee docs/evidencias/04-validaciones.txt
+IP_WEB=<IP de web01>
+IP_DB=<IP de db01>
+
+ansible-playbook site.yml    -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/01-primera-corrida.txt
+ansible-playbook site.yml    -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/02-segunda-corrida.txt
+ansible-playbook site.yml --check --diff -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/03-check-mode.txt
+ansible-playbook validar.yml -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/04-validaciones.txt
 git log --oneline --graph    > docs/evidencias/git-log.txt
 ```
 

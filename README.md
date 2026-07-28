@@ -53,7 +53,7 @@ ansible-galaxy collection install -r requirements.yml
 ## Cómo se ejecuta
 
 ```bash
-# 1. Poner las IPs reales de las dos VMs
+# 1. Poner las IPs reales de las dos VMs (para este despliegue y los siguientes)
 vi inventory/hosts.ini
 
 # 2. Cargar la password de la aplicación en el vault (una sola vez)
@@ -68,6 +68,13 @@ ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=<usuario_existente>
 # 4. Desplegar todo
 ansible-playbook site.yml
 ```
+
+Sobre el paso 1: si no se quiere editar `inventory/hosts.ini` -- por ejemplo, para
+reusar este mismo repo contra otro par de VMs sin tocar el archivo -- tanto
+`bootstrap.yml` como `site.yml` preguntan la IP de cada servidor al arrancar
+(default: Enter para mantener la del inventario). Para saltear la pregunta en una
+corrida ya scripteada: `ansible-playbook site.yml -e ip_web=<IP> -e ip_db=<IP>`.
+Ver `docs/INSTALL.md`, punto 5.
 
 La aplicación queda en `http://<IP de web01>/`.
 
