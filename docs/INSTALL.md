@@ -27,7 +27,7 @@ instalar Ansible y generar la clave.
 ## Paso a paso
 
 Los pasos van en orden y no son intercambiables: en particular, **no correr
-`site.yml` (paso 8) antes de que el paso 7 (`bootstrap.yml`) termine sin
+`site.yml` (paso 7) antes de que el paso 6 (`bootstrap.yml`) termine sin
 errores en los dos servidores**. `site.yml` sólo conecta por clave SSH, y esa
 clave la instala `bootstrap.yml`; corrido antes, falla con `Permission denied`.
 
@@ -37,14 +37,19 @@ El nodo de control es la **VM CentOS Stream**, la misma que después será el
 servidor web. Está en su propio inventario y se administra a sí misma.
 
 ```bash
-sudo dnf install -y ansible-core git sshpass
+sudo dnf install -y ansible-core git
 ansible --version
 ```
 
-`ansible-core` está en el repositorio AppStream; no hace falta EPEL. `sshpass` es
-necesario para el paso 7 (`bootstrap.yml -k -K`): sin él, Ansible falla con
+`ansible-core` está en el repositorio AppStream; no hace falta EPEL.
+
+`sshpass` (necesario para conectarse con password, el `-k`/`-K` del paso 6) **no
+hace falta instalarlo acá a mano**: `bootstrap.yml` lo instala solo, como su
+primera tarea, en un play local (`hosts: localhost`, `connection: local`) que
+no necesita SSH todavía. Si en algún momento aparece igual el error
 `to use the 'ssh' connection type with passwords ..., you must install the
-sshpass program` apenas intenta conectarse con password.
+sshpass program`, es señal de que esa tarea no llegó a correr en el nodo de
+control -- revisar con `which sshpass` ahí.
 
 ### 2. Generar el par de claves SSH
 
@@ -130,35 +135,11 @@ Para fijar otra IP sin tocar el inventario y sin que pregunte nada -- por
 ejemplo, al capturar las evidencias, para que el log quede limpio -- se agrega
 `-e ip_web=... -e ip_db=...` (sin `< >`: en bash son redirección de
 entrada/salida, no texto literal) al comando de `bootstrap.yml` o `site.yml`
-del paso que corresponda (7 y 8 respectivamente). **Este paso 5 es sólo para
+del paso que corresponda (6 y 7 respectivamente). **Este paso 5 es sólo para
 dejar las IPs en el inventario: todavía no hay que ejecutar ningún
 `ansible-playbook`.** Eso empieza recién en el paso 6.
 
-### 6. Comprobar la conectividad antes de seguir
-
-```bash
-ansible servidores -m ansible.builtin.ping -k -u sysadmin
-```
-
-Cambiar `sysadmin` por el usuario que ya existe en las VMs. **No dejar el nombre
-entre `< >`**: en bash esos caracteres son redirección de entrada/salida, así
-que pegar algo como `-u <usuario_existente>` literal no falla con un error claro
-de Ansible sino con `bash: syntax error near unexpected token`, porque el shell
-intenta abrir/crear archivos con esos nombres antes de que Ansible llegue a
-correr.
-
-Este chequeo no es una formalidad. `ansible-core` de AppStream puede ser una serie
-más vieja que el Python que trae Ubuntu, y los módulos corren con el intérprete del
-host administrado: el síntoma es un `SyntaxError` o `ModuleNotFoundError` en
-cualquier módulo sobre `db`, mientras `web` funciona perfecto. Si el `ping` no
-pasa contra los **dos** hosts, hay que resolverlo antes de desplegar.
-
-También es la primera vez que Ansible se conecta a cada host, así que puede
-preguntar si confiar en su fingerprint SSH (`Are you sure you want to continue
-connecting...`). Es normal la primera vez; responder `yes` lo agrega a
-`known_hosts` y no vuelve a preguntar en corridas posteriores.
-
-### 7. Correr el bootstrap
+### 6. Correr el bootstrap
 
 ```bash
 ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
@@ -167,13 +148,29 @@ ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
 - `-k` pide el password de SSH
 - `-K` pide el password de `sudo`
 - `bootstrap_ssh_user` es el usuario que ya existe en las VMs (de nuevo, sin
-  `< >`: mismo problema que en el punto 6)
+  `< >`: mismo problema que en el punto 5)
 
 Antes de pedir esos dos passwords, también resuelve la IP de cada VM: si
 `inventory/hosts.ini` ya tiene la IP real no pregunta nada; si no, la pide. Para
 fijar otra IP sin tocar el archivo: agregar `-e ip_web=172.18.3.119 -e
 ip_db=172.18.3.120` al comando de arriba (IPs reales, no entre `< >`, por la
 misma razón que arriba).
+
+Su primera tarea instala `sshpass` en el nodo de control (necesario para el
+`-k`/`-K` de este mismo comando) en un play local que no necesita SSH todavía,
+así que no hay que instalarlo a mano en el paso 1 ni probarlo aparte.
+
+Esta corrida es también la primera conexión real de Ansible a cada host, y de
+paso funciona como chequeo de compatibilidad: `ansible-core` de AppStream puede
+ser una serie más vieja que el Python que trae Ubuntu, y los módulos corren con
+el intérprete del host administrado. Si `db` tiene un Python incompatible, el
+síntoma es un `SyntaxError` o `ModuleNotFoundError` justo acá, mientras `web`
+(que se administra a sí mismo) sigue funcionando perfecto -- no hace falta un
+`ping` de prueba aparte, el error sale igual de claro en esta misma corrida.
+
+También puede preguntar si confiar en el fingerprint SSH de cada host (`Are you
+sure you want to continue connecting...`). Es normal la primera vez; responder
+`yes` lo agrega a `known_hosts` y no vuelve a preguntar en corridas posteriores.
 
 Deja en los dos servidores: el usuario `ansible`, la clave pública del nodo de
 control y `/etc/sudoers.d/90-ansible` con `NOPASSWD`. Termina verificando que puede
@@ -188,7 +185,7 @@ escalar a root sin prompts.
 Que `site.yml` corra sin ningún prompt no es cosmético: es condición necesaria para
 que la evidencia de idempotencia sea un log limpio.
 
-### 8. Desplegar
+### 7. Desplegar
 
 ```bash
 ansible-playbook site.yml -e ip_web=172.18.3.119 -e ip_db=172.18.3.120

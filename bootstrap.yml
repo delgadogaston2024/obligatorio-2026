@@ -25,6 +25,16 @@
   gather_facts: false
   tags: [always]
   tasks:
+    - name: Instalar sshpass en el nodo de control
+      # Play local (connection: local), asi que no necesita SSH todavia: se
+      # puede instalar aca mismo antes de que las tareas de mas abajo usen
+      # -k/-K. Sin esto, esas tareas fallan con "you must install the sshpass
+      # program" y habria que instalarlo a mano antes de poder arrancar.
+      ansible.builtin.dnf:
+        name: sshpass
+        state: present
+      become: true
+
     - name: Confirmar que se indico el usuario SSH inicial
       ansible.builtin.assert:
         that:
