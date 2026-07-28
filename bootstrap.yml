@@ -15,6 +15,8 @@
 # canal de acceso. Todo lo que hace este playbook esta documentado en
 # docs/INSTALL.md como requisito previo.
 
+- ansible.builtin.import_playbook: preguntar_ips.yml
+
 - name: Preflight en el nodo de control
   hosts: localhost
   connection: local
@@ -37,13 +39,6 @@
         fail_msg: >-
           No encuentro {{ bootstrap_pubkey_file }}. Generar el par en el nodo de
           control con: ssh-keygen -t ed25519 -C "ansible@web" -N ""
-
-    - name: Confirmar que el inventario ya tiene las IPs reales
-      ansible.builtin.assert:
-        that:
-          - "'CAMBIAR' not in hostvars[item].ansible_host"
-        fail_msg: "Falta poner la IP real de {{ item }} en inventory/hosts.ini"
-      loop: "{{ groups['servidores'] }}"
 
 - name: Crear el usuario de automatizacion en los dos servidores
   hosts: servidores

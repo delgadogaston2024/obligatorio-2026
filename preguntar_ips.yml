@@ -1,0 +1,47 @@
+---
+# Pregunta la IP real de cada servidor al arrancar el playbook, para no tener
+# que editar inventory/hosts.ini a mano en cada despliegue nuevo (por ejemplo,
+# si mas adelante este mismo repo se usa contra otro par de VMs).
+#
+# Si se responde vacio (Enter), se mantiene la IP que ya esta en el inventario.
+# Para correrlo sin que pregunte nada (por ejemplo al capturar evidencias dos
+# veces seguidas), se pasan los valores por linea de comandos: Ansible no
+# pregunta por una variable que ya llega definida con -e.
+#   ansible-playbook site.yml -e ip_web=10.0.0.10 -e ip_db=10.0.0.11
+#
+# tags: [always] para que la pregunta aparezca aunque se corra con -t db o -t web.
+
+- name: Preguntar la IP real de cada servidor
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  tags: [always]
+  vars_prompt:
+    - name: ip_web
+      prompt: "IP de la VM CentOS / servidor web (Enter para mantener la del inventario)"
+      default: "{{ hostvars[groups['web'][0]].ansible_host }}"
+      private: false
+    - name: ip_db
+      prompt: "IP de la VM Ubuntu / servidor de base de datos (Enter para mantener la del inventario)"
+      default: "{{ hostvars[groups['db'][0]].ansible_host }}"
+      private: false
+  tasks:
+    - name: Usar esa IP para el resto de la corrida
+      ansible.builtin.add_host:
+        name: "{{ item.host }}"
+        ansible_host: "{{ item.ip }}"
+      loop:
+        - { host: "{{ groups['web'][0] }}", ip: "{{ ip_web }}" }
+        - { host: "{{ groups['db'][0] }}", ip: "{{ ip_db }}" }
+      loop_control:
+        label: "{{ item.host }}"
+
+    - name: Confirmar que ninguna quedo con el placeholder original
+      ansible.builtin.assert:
+        that:
+          - "'CAMBIAR' not in hostvars[item].ansible_host"
+        fail_msg: >-
+          Falta la IP real de {{ item }}. Ponerla en inventory/hosts.ini o
+          escribirla cuando el playbook la pregunta.
+      loop: "{{ [groups['web'][0], groups['db'][0]] }}"

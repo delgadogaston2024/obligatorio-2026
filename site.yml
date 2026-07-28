@@ -8,6 +8,8 @@
 # En cada play el rol de firewall va DESPUES del rol funcional a proposito: si
 # algo falla a mitad de camino, no nos quedamos sin SSH antes de haber terminado.
 
+- ansible.builtin.import_playbook: preguntar_ips.yml
+
 - name: Preparacion comun de los dos servidores
   hosts: servidores
   become: true
