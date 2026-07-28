@@ -46,9 +46,13 @@
       el playbook para que las cargue.
 
 - name: Consultar desde donde puede conectarse el usuario de la aplicacion
+  # mysql.user es una vista de compatibilidad cuya columna real es "Host"
+  # (mayuscula). Sin alias explicito, el conector devuelve la fila con esa
+  # clave tal cual esta definida en el catalogo, no como se escribio en el
+  # SELECT, y ".host" en minuscula falla mas abajo.
   community.mysql.mysql_query:
     login_db: mysql
-    query: "SELECT host FROM mysql.user WHERE user = %s"
+    query: "SELECT host AS host FROM mysql.user WHERE user = %s"
     positional_args:
       - "{{ db_app_user }}"
     login_unix_socket: "{{ mariadb_socket }}"
