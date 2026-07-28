@@ -98,7 +98,7 @@
     return_content: true
     status_code: 200
     timeout: 15
-  delegate_to: "{{ groups['db'][0] }}"
+  delegate_to: db
   become: false
   changed_when: false
   check_mode: false

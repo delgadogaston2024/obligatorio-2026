@@ -25,8 +25,8 @@ db_port: 3306
 # --- Direcciones ----------------------------------------------------------
 # Se derivan del inventario a proposito. No usar ansible_default_ipv4: con dos
 # interfaces de red devuelve la equivocada la mitad de las veces.
-web_host: "{{ hostvars[groups['web'][0]].ansible_host }}"
-db_host: "{{ hostvars[groups['db'][0]].ansible_host }}"
+web_host: "{{ hostvars['web'].ansible_host }}"
+db_host: "{{ hostvars['db'].ansible_host }}"
 
 # --- Datos iniciales de la tabla -----------------------------------------
 # Agregar o cambiar filas aca: el esquema es idempotente y las carga sin

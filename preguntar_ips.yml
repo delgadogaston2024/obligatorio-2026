@@ -1,45 +1,52 @@
 ---
-# Pregunta la IP real de cada servidor al arrancar el playbook, para no tener
-# que editar inventory/hosts.ini a mano en cada despliegue nuevo (por ejemplo,
-# si mas adelante este mismo repo se usa contra otro par de VMs).
+# Resuelve la IP real de cada servidor SIN preguntar nada si el inventario ya
+# la tiene. Solo pregunta cuando el inventario todavia tiene el placeholder
+# (un repo recien clonado, sin editar) o quedo vacio.
 #
-# Si se responde vacio (Enter), se mantiene la IP que ya esta en el inventario.
-# Para correrlo sin que pregunte nada (por ejemplo al capturar evidencias dos
-# veces seguidas), se pasan los valores por linea de comandos: Ansible no
-# pregunta por una variable que ya llega definida con -e.
+# Para fijar otra IP sin editar el inventario ni que pregunte nada -- por
+# ejemplo, para reusar este mismo repo contra otro par de VMs, o durante la
+# captura de evidencias -- se pasa por linea de comandos con -e (Ansible no
+# pregunta por una variable que ya llega definida asi):
 #   ansible-playbook site.yml -e ip_web=10.0.0.10 -e ip_db=10.0.0.11
 #
-# tags: [always] para que la pregunta aparezca aunque se corra con -t db o -t web.
+# tags: [always] para que esto corra aunque se use -t db o -t web.
 
-- name: Preguntar la IP real de cada servidor
+- name: Resolver la IP real de cada servidor
   hosts: localhost
   connection: local
   gather_facts: false
   become: false
   tags: [always]
-  vars_prompt:
-    # El default de vars_prompt se templa ANTES de que hostvars este disponible
-    # en este play, asi que no puede leer la IP actual del inventario aca. Por
-    # eso el default queda vacio, y la IP del inventario se aplica despues, en
-    # la primera tarea, donde hostvars si existe.
-    - name: ip_web
-      prompt: "IP de la VM CentOS / servidor web (Enter para mantener la del inventario)"
-      default: ""
-      private: false
-    - name: ip_db
-      prompt: "IP de la VM Ubuntu / servidor de base de datos (Enter para mantener la del inventario)"
-      default: ""
-      private: false
   tasks:
-    - name: Usar la IP indicada, o si quedo vacia la que ya tiene el inventario
+    - name: Preguntar la IP de la VM CentOS / servidor web (solo si el inventario no tiene una real)
+      ansible.builtin.pause:
+        prompt: "IP de la VM CentOS / servidor web (Enter para mantener la del inventario)"
+      register: r_ip_web
+      when:
+        - ip_web is not defined
+        - "'CAMBIAR' in hostvars['web'].ansible_host or hostvars['web'].ansible_host | length == 0"
+
+    - name: Preguntar la IP de la VM Ubuntu / servidor de base de datos (solo si el inventario no tiene una real)
+      ansible.builtin.pause:
+        prompt: "IP de la VM Ubuntu / servidor de base de datos (Enter para mantener la del inventario)"
+      register: r_ip_db
+      when:
+        - ip_db is not defined
+        - "'CAMBIAR' in hostvars['db'].ansible_host or hostvars['db'].ansible_host | length == 0"
+
+    - name: Usar la IP de web (por -e, por la pregunta, o la que ya tiene el inventario)
       ansible.builtin.add_host:
-        name: "{{ item.host }}"
-        ansible_host: "{{ item.ip if item.ip | length > 0 else hostvars[item.host].ansible_host }}"
-      loop:
-        - { host: "{{ groups['web'][0] }}", ip: "{{ ip_web }}" }
-        - { host: "{{ groups['db'][0] }}", ip: "{{ ip_db }}" }
-      loop_control:
-        label: "{{ item.host }}"
+        name: web
+        ansible_host: >-
+          {{ ip_web | default(r_ip_web.user_input | default('', true), true)
+             | default(hostvars['web'].ansible_host, true) }}
+
+    - name: Usar la IP de db (por -e, por la pregunta, o la que ya tiene el inventario)
+      ansible.builtin.add_host:
+        name: db
+        ansible_host: >-
+          {{ ip_db | default(r_ip_db.user_input | default('', true), true)
+             | default(hostvars['db'].ansible_host, true) }}
 
     - name: Confirmar que ninguna quedo con el placeholder original
       ansible.builtin.assert:
@@ -48,4 +55,4 @@
         fail_msg: >-
           Falta la IP real de {{ item }}. Ponerla en inventory/hosts.ini o
           escribirla cuando el playbook la pregunta.
-      loop: "{{ [groups['web'][0], groups['db'][0]] }}"
+      loop: ["web", "db"]

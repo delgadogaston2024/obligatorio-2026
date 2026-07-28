@@ -10,16 +10,16 @@
   # Mejor cortar aca, con un mensaje que dice exactamente que pasa.
   ansible.builtin.assert:
     that:
-      - (inventory_hostname in groups['web'] and ansible_facts['os_family'] == 'RedHat')
-        or (inventory_hostname in groups['db'] and ansible_facts['os_family'] == 'Debian')
+      - (inventory_hostname == 'web' and ansible_facts['os_family'] == 'RedHat')
+        or (inventory_hostname == 'db' and ansible_facts['os_family'] == 'Debian')
     success_msg: >-
       {{ inventory_hostname }}: {{ ansible_facts['distribution'] }}
       {{ ansible_facts['distribution_version'] }}
     fail_msg: >-
-      {{ inventory_hostname }} es {{ ansible_facts['distribution'] }} pero el
-      inventario lo pone en el grupo equivocado. El grupo [web] tiene que ser
-      CentOS Stream y el grupo [db] Ubuntu Server. Revisar inventory/hosts.ini:
-      probablemente esten invertidas las IPs.
+      {{ inventory_hostname }} es {{ ansible_facts['distribution'] }} pero eso
+      no coincide con lo esperado: "web" tiene que ser CentOS Stream y "db"
+      Ubuntu Server. Revisar inventory/hosts.ini: probablemente esten
+      invertidas las IPs.
 
 - name: Evaluar el secreto de la aplicacion sin exponerlo en la salida
   # Se calcula un booleano y el assert de abajo solo ve ese booleano. Asi el

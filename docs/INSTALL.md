@@ -105,8 +105,8 @@ head -1 group_vars/all/vault.yml     # tiene que decir $ANSIBLE_VAULT;1.1;AES256
 ### 5. Poner las IPs en el inventario
 
 Son los dos únicos valores que dependen del entorno. Importa no invertirlos: el
-grupo `[web]` es la VM CentOS y el grupo `[db]` la VM Ubuntu. Si se invierten, el
-rol `common` lo detecta en la primera tarea y corta con un mensaje explícito.
+host `web` es la VM CentOS y el host `db` la VM Ubuntu. Si se invierten, el rol
+`common` lo detecta en la primera tarea y corta con un mensaje explícito.
 
 Hay dos formas de dejarlas puestas, y no son excluyentes:
 
@@ -115,15 +115,15 @@ nano inventory/hosts.ini
 ```
 
 Esto queda escrito en el repo, así que sirve también para el próximo despliegue
-contra las mismas VMs. La alternativa es no tocar el archivo y dejar que
-`bootstrap.yml`/`site.yml` la pregunten al arrancar (lo hace `preguntar_ips.yml`,
-importado como primer play de los dos): al ejecutar, piden la IP de cada VM y, si
-se responde vacío (Enter), usan la que ya está en el inventario. Sirve para
-reusar este mismo repo contra **otro** par de VMs sin editar nada.
+contra las mismas VMs. **Si el archivo ya tiene la IP real de cada servidor,
+`bootstrap.yml`/`site.yml` no preguntan nada** al arrancar: la pregunta (la hace
+`preguntar_ips.yml`, importado como primer play de los dos) sólo aparece cuando
+el inventario todavía tiene el placeholder o quedó vacío -- por ejemplo, para
+reusar este mismo repo contra **otro** par de VMs sin editar el archivo.
 
-Para correr sin que pregunte nada -- necesario al capturar las evidencias, para
-que el log quede limpio -- se pasan las IPs por línea de comandos, algo que
-Ansible entiende sin pedirlas de nuevo:
+Para fijar otra IP sin tocar el inventario y sin que pregunte nada -- por
+ejemplo, al capturar las evidencias, para que el log quede limpio -- se pasan
+las IPs por línea de comandos, algo que Ansible entiende sin pedirlas de nuevo:
 
 ```bash
 ansible-playbook site.yml -e ip_web=172.18.3.119 -e ip_db=172.18.3.120
@@ -134,10 +134,6 @@ caracteres son redirección de entrada/salida, así que un valor literal como
 `<IP de la VM CentOS>` no da un error de Ansible sino
 `bash: syntax error near unexpected token` antes de que el playbook llegue a
 correr.
-
-Si las IPs del inventario ya son las correctas, alcanza con correr
-`ansible-playbook site.yml` sin nada más: igual pregunta, pero el valor por
-default (Enter) es el que ya está en `inventory/hosts.ini`.
 
 ### 6. Comprobar la conectividad antes de seguir
 
@@ -155,7 +151,7 @@ correr.
 Este chequeo no es una formalidad. `ansible-core` de AppStream puede ser una serie
 más vieja que el Python que trae Ubuntu, y los módulos corren con el intérprete del
 host administrado: el síntoma es un `SyntaxError` o `ModuleNotFoundError` en
-cualquier módulo sobre `db01`, mientras `web01` funciona perfecto. Si el `ping` no
+cualquier módulo sobre `db`, mientras `web` funciona perfecto. Si el `ping` no
 pasa contra los **dos** hosts, hay que resolverlo antes de desplegar.
 
 También es la primera vez que Ansible se conecta a cada host, así que puede
@@ -174,10 +170,11 @@ ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
 - `bootstrap_ssh_user` es el usuario que ya existe en las VMs (de nuevo, sin
   `< >`: mismo problema que en el punto 6)
 
-Antes de pedir esos dos passwords, también pregunta la IP de cada VM (default:
-la que ya está en `inventory/hosts.ini`). Para saltear esa pregunta en una
-corrida repetida: agregar `-e ip_web=<IP> -e ip_db=<IP>` al comando de arriba,
-reemplazando `<IP>` por la IP real (no dejarla literal, por la misma razón).
+Antes de pedir esos dos passwords, también resuelve la IP de cada VM: si
+`inventory/hosts.ini` ya tiene la IP real no pregunta nada; si no, la pide. Para
+fijar otra IP sin tocar el archivo: agregar `-e ip_web=172.18.3.119 -e
+ip_db=172.18.3.120` al comando de arriba (IPs reales, no entre `< >`, por la
+misma razón que arriba).
 
 Deja en los dos servidores: el usuario `ansible`, la clave pública del nodo de
 control y `/etc/sudoers.d/90-ansible` con `NOPASSWD`. Termina verificando que puede
@@ -198,24 +195,26 @@ que la evidencia de idempotencia sea un log limpio.
 ansible-playbook site.yml -e ip_web=172.18.3.119 -e ip_db=172.18.3.120
 ```
 
-(IPs reales, sin `< >`: en bash son redirección, no texto literal.) Pasar las
-IPs con `-e` evita que pregunte nada (ver punto 5); si el inventario
-ya tiene las correctas, `ansible-playbook site.yml` a secas también funciona,
-solo que va a preguntar y aceptar el default con Enter.
+(IPs reales, sin `< >`: en bash son redirección, no texto literal.) Este paso
+con `-e` es opcional: si el inventario ya tiene las IPs correctas,
+`ansible-playbook site.yml` a secas no pregunta nada tampoco.
 
 ## Verificación manual
 
-Además de las validaciones automáticas que corren dentro del playbook:
+Además de las validaciones automáticas que corren dentro del playbook (los
+comandos de abajo asumen que se corren directamente en cada VM, ya sea por
+consola o por `ssh sysadmin@<IP>`):
 
 ```bash
-ssh db01  'sudo ss -ltnp | grep 3306'      # escucha en la IP de db01, NO en 127.0.0.1
-ssh db01  'sudo ufw status verbose'        # 3306 ALLOW IN desde la IP de web01
-ssh web01 'sudo firewall-cmd --list-all'   # solo http y ssh
-ssh web01 'getenforce'                     # Enforcing
-ssh web01 'getsebool httpd_can_network_connect_db'
+sudo ss -ltnp | grep 3306                        # en db: escucha en su IP, NO en 127.0.0.1
+sudo ufw status verbose                          # en db: 3306 ALLOW IN desde la IP de web
+sudo firewall-cmd --list-all                     # en web: solo http y ssh
+getenforce                                        # en web: Enforcing
+getsebool httpd_can_network_connect_db            # en web
 ```
 
-Y la prueba que importa: abrir `http://<IP de web01>/` en el navegador de Windows.
+Y la prueba que importa: abrir `http://172.18.3.119/` (la IP de `web`) en el
+navegador de Windows.
 
 ## Captura de evidencias
 

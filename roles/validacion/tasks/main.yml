@@ -7,8 +7,8 @@
 
 - name: Validar el servidor de base de datos
   ansible.builtin.include_tasks: db.yml
-  when: inventory_hostname in groups['db']
+  when: inventory_hostname == 'db'
 
 - name: Validar el servidor de aplicacion
   ansible.builtin.include_tasks: web.yml
-  when: inventory_hostname in groups['web']
+  when: inventory_hostname == 'web'

@@ -14,7 +14,7 @@ segunda ejecución es idempotente.
 | `02-segunda-corrida.txt` | mismo comando; el `PLAY RECAP` debe dar `changed=0` en los dos hosts |
 | `03-check-mode.txt` | `ansible-playbook site.yml --check --diff \| tee ...` |
 | `04-validaciones.txt` | `ansible-playbook validar.yml \| tee ...` |
-| `05-app-navegador.png` | Captura del navegador **en Windows** contra `http://<IP de web01>/`, con la barra de direcciones visible en el recorte: es lo que prueba que no es `localhost` |
+| `05-app-navegador.png` | Captura del navegador **en Windows** contra `http://172.18.3.119/` (la IP de `web`), con la barra de direcciones visible en el recorte: es lo que prueba que no es `localhost` |
 | `06-recap-idempotencia.png` | Captura del `PLAY RECAP` de la segunda corrida |
 | `07-estado-servidores.txt` | Salida de los comandos de verificación manual de `docs/INSTALL.md` |
 | `git-log.txt` | `git log --oneline --graph > docs/evidencias/git-log.txt` |
@@ -23,8 +23,8 @@ segunda ejecución es idempotente.
 
 ```
 PLAY RECAP ***********************************************************
-db01  : ok=NN  changed=0  unreachable=0  failed=0  skipped=N  rescued=0  ignored=0
-web01 : ok=NN  changed=0  unreachable=0  failed=0  skipped=N  rescued=0  ignored=0
+db  : ok=NN  changed=0  unreachable=0  failed=0  skipped=N  rescued=0  ignored=0
+web : ok=NN  changed=0  unreachable=0  failed=0  skipped=N  rescued=0  ignored=0
 ```
 
 Que `ok=` difiera entre la primera y la segunda corrida es normal. Lo que tiene que

@@ -16,11 +16,11 @@ posteriores a la instalación de Ansible.
                  │  HTTP :80
                  ▼
     ┌────────────────────────┐            ┌────────────────────────┐
-    │  web01                 │  MySQL     │  db01                  │
+    │  web                   │  MySQL     │  db                    │
     │  CentOS Stream 9       │  :3306     │  Ubuntu Server         │
     │  Apache + php-fpm      │ ─────────► │  MariaDB               │
     │  firewalld: ssh, http  │            │  UFW: ssh, 3306 (solo  │
-    │  SELinux: enforcing    │            │  desde la IP de web01) │
+    │  SELinux: enforcing    │            │  desde la IP de web)   │
     │  + nodo de control     │            │                        │
     └────────────────────────┘            └────────────────────────┘
 ```
@@ -81,7 +81,7 @@ reusar este mismo repo contra otro par de VMs sin tocar el archivo -- tanto
 corrida ya scripteada: `ansible-playbook site.yml -e ip_web=172.18.3.119 -e ip_db=172.18.3.120`
 (de nuevo, IPs reales, no entre `< >`). Ver `docs/INSTALL.md`, punto 5.
 
-La aplicación queda en `http://<IP de web01>/`.
+La aplicación queda en `http://172.18.3.119/` (la IP de `web`).
 
 Comandos auxiliares:
 
@@ -100,7 +100,7 @@ requirements.yml         colecciones necesarias
 bootstrap.yml            preparación del acceso (se corre una sola vez)
 site.yml                 playbook principal
 validar.yml              validaciones (site.yml lo importa al final)
-inventory/hosts.ini      grupos [web], [db] y [servidores:children]
+inventory/hosts.ini      hosts "web" y "db" dentro del grupo [servidores]
 group_vars/
   all/main.yml           variables de la aplicación y de la base
   all/vault.yml          password real, cifrada con ansible-vault
