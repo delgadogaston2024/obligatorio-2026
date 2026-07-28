@@ -2,10 +2,12 @@
 # Se corre UNA SOLA VEZ, antes de site.yml, usando el usuario que ya existe en
 # las VMs y su password:
 #
-#   ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=<usuario_existente>
+#   ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
 #
 #     -k  pide el password de SSH
 #     -K  pide el password de sudo
+#     (reemplazar "sysadmin" por el usuario real, sin < >: en bash esos
+#      caracteres son redireccion de entrada/salida, no texto literal)
 #
 # Deja instalada la clave publica del nodo de control y sudo sin password, para
 # que site.yml corra despues sin ningun prompt. Eso no es cosmetico: es condicion

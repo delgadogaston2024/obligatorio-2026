@@ -32,11 +32,14 @@ El nodo de control es la **VM CentOS Stream**, la misma que después será el
 servidor web. Está en su propio inventario y se administra a sí misma.
 
 ```bash
-sudo dnf install -y ansible-core git
+sudo dnf install -y ansible-core git sshpass
 ansible --version
 ```
 
-`ansible-core` está en el repositorio AppStream; no hace falta EPEL.
+`ansible-core` está en el repositorio AppStream; no hace falta EPEL. `sshpass` es
+necesario para el paso 7 (`bootstrap.yml -k -K`): sin él, Ansible falla con
+`to use the 'ssh' connection type with passwords ..., you must install the
+sshpass program` apenas intenta conectarse con password.
 
 ### 2. Generar el par de claves SSH
 
@@ -60,6 +63,16 @@ La clave privada queda en `~/.ssh/id_ed25519` y **nunca** entra al repositorio.
 git clone https://github.com/delgadogaston2024/obligatorio-2026.git
 cd obligatorio-2026
 ansible-galaxy collection install -r requirements.yml
+```
+
+Esto es **una sola vez**. Si el repo ya está clonado y lo que se quiere es
+traer cambios nuevos (por ejemplo, después de un fix), no se clona de nuevo
+adentro del mismo directorio -- eso deja un `obligatorio-2026/obligatorio-2026`
+anidado y confunde cuál versión se está corriendo. Alcanza con:
+
+```bash
+cd ~/obligatorio-2026
+git pull origin main
 ```
 
 Las colecciones quedan en `collections/` dentro del proyecto (así lo define
@@ -113,8 +126,14 @@ que el log quede limpio -- se pasan las IPs por línea de comandos, algo que
 Ansible entiende sin pedirlas de nuevo:
 
 ```bash
-ansible-playbook site.yml -e ip_web=<IP de la VM CentOS> -e ip_db=<IP de la VM Ubuntu>
+ansible-playbook site.yml -e ip_web=172.18.3.119 -e ip_db=172.18.3.120
 ```
+
+Reemplazar esas dos IPs por las reales, **sin dejarlas entre `< >`**: en bash esos
+caracteres son redirección de entrada/salida, así que un valor literal como
+`<IP de la VM CentOS>` no da un error de Ansible sino
+`bash: syntax error near unexpected token` antes de que el playbook llegue a
+correr.
 
 Si las IPs del inventario ya son las correctas, alcanza con correr
 `ansible-playbook site.yml` sin nada más: igual pregunta, pero el valor por
@@ -123,8 +142,15 @@ default (Enter) es el que ya está en `inventory/hosts.ini`.
 ### 6. Comprobar la conectividad antes de seguir
 
 ```bash
-ansible servidores -m ansible.builtin.ping -k -u <usuario_existente>
+ansible servidores -m ansible.builtin.ping -k -u sysadmin
 ```
+
+Cambiar `sysadmin` por el usuario que ya existe en las VMs. **No dejar el nombre
+entre `< >`**: en bash esos caracteres son redirección de entrada/salida, así
+que pegar algo como `-u <usuario_existente>` literal no falla con un error claro
+de Ansible sino con `bash: syntax error near unexpected token`, porque el shell
+intenta abrir/crear archivos con esos nombres antes de que Ansible llegue a
+correr.
 
 Este chequeo no es una formalidad. `ansible-core` de AppStream puede ser una serie
 más vieja que el Python que trae Ubuntu, y los módulos corren con el intérprete del
@@ -132,19 +158,26 @@ host administrado: el síntoma es un `SyntaxError` o `ModuleNotFoundError` en
 cualquier módulo sobre `db01`, mientras `web01` funciona perfecto. Si el `ping` no
 pasa contra los **dos** hosts, hay que resolverlo antes de desplegar.
 
+También es la primera vez que Ansible se conecta a cada host, así que puede
+preguntar si confiar en su fingerprint SSH (`Are you sure you want to continue
+connecting...`). Es normal la primera vez; responder `yes` lo agrega a
+`known_hosts` y no vuelve a preguntar en corridas posteriores.
+
 ### 7. Correr el bootstrap
 
 ```bash
-ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=<usuario_existente>
+ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
 ```
 
 - `-k` pide el password de SSH
 - `-K` pide el password de `sudo`
-- `bootstrap_ssh_user` es el usuario que ya existe en las VMs
+- `bootstrap_ssh_user` es el usuario que ya existe en las VMs (de nuevo, sin
+  `< >`: mismo problema que en el punto 6)
 
 Antes de pedir esos dos passwords, también pregunta la IP de cada VM (default:
 la que ya está en `inventory/hosts.ini`). Para saltear esa pregunta en una
-corrida repetida: agregar `-e ip_web=<IP> -e ip_db=<IP>` al comando de arriba.
+corrida repetida: agregar `-e ip_web=<IP> -e ip_db=<IP>` al comando de arriba,
+reemplazando `<IP>` por la IP real (no dejarla literal, por la misma razón).
 
 Deja en los dos servidores: el usuario `ansible`, la clave pública del nodo de
 control y `/etc/sudoers.d/90-ansible` con `NOPASSWD`. Termina verificando que puede
@@ -162,10 +195,11 @@ que la evidencia de idempotencia sea un log limpio.
 ### 8. Desplegar
 
 ```bash
-ansible-playbook site.yml -e ip_web=<IP de web01> -e ip_db=<IP de db01>
+ansible-playbook site.yml -e ip_web=172.18.3.119 -e ip_db=172.18.3.120
 ```
 
-Pasar las IPs con `-e` evita que pregunte nada (ver punto 5); si el inventario
+(IPs reales, sin `< >`: en bash son redirección, no texto literal.) Pasar las
+IPs con `-e` evita que pregunte nada (ver punto 5); si el inventario
 ya tiene las correctas, `ansible-playbook site.yml` a secas también funciona,
 solo que va a preguntar y aceptar el default con Enter.
 
@@ -189,8 +223,8 @@ Con `-e ip_web=... -e ip_db=...` en las cuatro corridas: así ninguna se detiene
 preguntar la IP y el log queda limpio de principio a fin.
 
 ```bash
-IP_WEB=<IP de web01>
-IP_DB=<IP de db01>
+IP_WEB=172.18.3.119
+IP_DB=172.18.3.120
 
 ansible-playbook site.yml    -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/01-primera-corrida.txt
 ansible-playbook site.yml    -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/02-segunda-corrida.txt

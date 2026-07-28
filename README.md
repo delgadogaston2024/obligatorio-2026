@@ -63,18 +63,23 @@ nano group_vars/all/vault.yml
 ansible-vault encrypt group_vars/all/vault.yml
 
 # 3. Preparar el acceso de Ansible a los dos servidores (una sola vez)
-ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=<usuario_existente>
+ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
 
 # 4. Desplegar todo
 ansible-playbook site.yml
 ```
 
+Reemplazar `sysadmin` por el usuario que ya existe en las VMs, **sin dejarlo
+entre `< >`**: en bash esos caracteres son redirección de entrada/salida, así que
+un valor literal como `<usuario_existente>` no da un error de Ansible sino
+`bash: syntax error near unexpected token`. Detalle completo en `docs/INSTALL.md`.
+
 Sobre el paso 1: si no se quiere editar `inventory/hosts.ini` -- por ejemplo, para
 reusar este mismo repo contra otro par de VMs sin tocar el archivo -- tanto
 `bootstrap.yml` como `site.yml` preguntan la IP de cada servidor al arrancar
 (default: Enter para mantener la del inventario). Para saltear la pregunta en una
-corrida ya scripteada: `ansible-playbook site.yml -e ip_web=<IP> -e ip_db=<IP>`.
-Ver `docs/INSTALL.md`, punto 5.
+corrida ya scripteada: `ansible-playbook site.yml -e ip_web=172.18.3.119 -e ip_db=172.18.3.120`
+(de nuevo, IPs reales, no entre `< >`). Ver `docs/INSTALL.md`, punto 5.
 
 La aplicación queda en `http://<IP de web01>/`.
 
