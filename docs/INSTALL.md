@@ -26,6 +26,11 @@ instalar Ansible y generar la clave.
 
 ## Paso a paso
 
+Los pasos van en orden y no son intercambiables: en particular, **no correr
+`site.yml` (paso 8) antes de que el paso 7 (`bootstrap.yml`) termine sin
+errores en los dos servidores**. `site.yml` sólo conecta por clave SSH, y esa
+clave la instala `bootstrap.yml`; corrido antes, falla con `Permission denied`.
+
 ### 1. Instalar Ansible en el nodo de control
 
 El nodo de control es la **VM CentOS Stream**, la misma que después será el
@@ -122,18 +127,12 @@ el inventario todavía tiene el placeholder o quedó vacío -- por ejemplo, para
 reusar este mismo repo contra **otro** par de VMs sin editar el archivo.
 
 Para fijar otra IP sin tocar el inventario y sin que pregunte nada -- por
-ejemplo, al capturar las evidencias, para que el log quede limpio -- se pasan
-las IPs por línea de comandos, algo que Ansible entiende sin pedirlas de nuevo:
-
-```bash
-ansible-playbook site.yml -e ip_web=172.18.3.119 -e ip_db=172.18.3.120
-```
-
-Reemplazar esas dos IPs por las reales, **sin dejarlas entre `< >`**: en bash esos
-caracteres son redirección de entrada/salida, así que un valor literal como
-`<IP de la VM CentOS>` no da un error de Ansible sino
-`bash: syntax error near unexpected token` antes de que el playbook llegue a
-correr.
+ejemplo, al capturar las evidencias, para que el log quede limpio -- se agrega
+`-e ip_web=... -e ip_db=...` (sin `< >`: en bash son redirección de
+entrada/salida, no texto literal) al comando de `bootstrap.yml` o `site.yml`
+del paso que corresponda (7 y 8 respectivamente). **Este paso 5 es sólo para
+dejar las IPs en el inventario: todavía no hay que ejecutar ningún
+`ansible-playbook`.** Eso empieza recién en el paso 6.
 
 ### 6. Comprobar la conectividad antes de seguir
 
