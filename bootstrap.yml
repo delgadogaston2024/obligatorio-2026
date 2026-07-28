@@ -73,6 +73,14 @@
     # comandos, asi que el usuario inicial hay que forzarlo desde play vars.
     ansible_user: "{{ bootstrap_ssh_user }}"
   tasks:
+    - name: Asegurar que existe el grupo de administracion del SO
+      # No dar por sentado que "sudo" (Ubuntu) o "wheel" (RHEL) ya existe: en
+      # imagenes minimas puede faltar, y ansible.builtin.user no crea grupos
+      # por si solo, falla con "Group ... does not exist".
+      ansible.builtin.group:
+        name: "{{ admin_group }}"
+        state: present
+
     - name: Crear el usuario de automatizacion
       ansible.builtin.user:
         name: "{{ bootstrap_user }}"
