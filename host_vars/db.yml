@@ -4,6 +4,19 @@
 # En Debian/Ubuntu el sudoers base habilita %sudo; en la familia RHEL, %wheel.
 admin_group: sudo
 
+# Ubuntu 26.04 trae sudo-rs como implementacion por defecto de /usr/bin/sudo
+# (via update-alternatives). sudo-rs envuelve el prompt personalizado que pasa
+# `-p` como "[sudo: <prompt>] Password:" en vez de mostrarlo literal, y el
+# plugin become=sudo de Ansible espera que la linea EMPIECE con el prompt
+# exacto que genera (ver ansible/plugins/become/__init__.py:check_password_prompt,
+# `l.strip().startswith(b_prompt)`). Como nunca matchea, toda tarea con become
+# contra este host cuelga con "Timeout (12s) waiting for privilege escalation
+# prompt", sin importar que la contrasena sea correcta. El sudo clasico
+# (1.9.17p2) ya esta instalado en paralelo en /usr/bin/sudo.ws y respeta `-p`
+# literal, asi que apuntamos el become ahi en vez de tocar el alternative del
+# sistema.
+ansible_become_exe: /usr/bin/sudo.ws
+
 mariadb_service: mariadb
 mariadb_socket: /run/mysqld/mysqld.sock
 mariadb_conf_dir: /etc/mysql/mariadb.conf.d
