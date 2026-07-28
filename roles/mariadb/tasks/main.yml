@@ -4,7 +4,7 @@
 # Nota sobre la autenticacion: NO se le pone password a root. En MariaDB, root se
 # autentica con el plugin unix_socket, asi que las tareas corren con become: true
 # y login_unix_socket. Ventajas: no hay un secreto mas que guardar, no hay
-# problema de huevo-y-gallina con .my.cnf, y se evita que mysql_user sobre root
+# problema de huevo-y-gallina con .my.cnf, y se evita que mariadb_user sobre root
 # reporte "changed" en cada corrida (MariaDB 10.4+ guarda multiples plugins de
 # autenticacion en mysql.global_priv y la deteccion de cambios se vuelve poco
 # fiable, lo que arruinaria la evidencia de idempotencia).
@@ -43,7 +43,7 @@
     timeout: 30
 
 - name: Crear la base de datos
-  community.mysql.mysql_db:
+  ansible.mariadb.mariadb_db:
     name: "{{ db_name }}"
     state: present
     encoding: utf8mb4
@@ -67,13 +67,13 @@
     mode: "0644"
 
 # --- Importacion controlada ------------------------------------------------
-# "mysql_db state=import" siempre reporta changed: el modulo no puede saber si el
+# "mariadb_db state=import" siempre reporta changed: el modulo no puede saber si el
 # script hizo algo. Dejarlo suelto rompe la idempotencia. Por eso se consulta
 # primero el estado real de la base y solo se importa si falta algo. El .sql es
 # ademas auto-idempotente (CREATE TABLE IF NOT EXISTS + INSERT IGNORE): doble red.
 
 - name: Consultar si la tabla ya existe
-  community.mysql.mysql_query:
+  ansible.mariadb.mariadb_query:
     login_db: information_schema
     query: >-
       SELECT COUNT(*) AS n FROM information_schema.tables
@@ -87,7 +87,7 @@
   check_mode: false
 
 - name: Contar las filas ya cargadas
-  community.mysql.mysql_query:
+  ansible.mariadb.mariadb_query:
     login_db: "{{ db_name }}"
     query: "SELECT COUNT(*) AS n FROM `{{ db_table }}`"
     login_unix_socket: "{{ mariadb_socket }}"
@@ -102,7 +102,7 @@
     filas_actuales: "{{ 0 if r_filas.skipped | default(false) else r_filas.query_result[0][0].n }}"
 
 - name: Importar el esquema y los datos iniciales
-  community.mysql.mysql_db:
+  ansible.mariadb.mariadb_db:
     name: "{{ db_name }}"
     state: import
     target: "{{ mariadb_schema_file }}"
@@ -117,7 +117,7 @@
   # update_password: on_create para que la tarea no reporte changed en cada
   # corrida. Para rotar la password: cambiarla en el vault y correr
   #   ansible-playbook site.yml -t db -e db_app_user_recrear=true
-  community.mysql.mysql_user:
+  ansible.mariadb.mariadb_user:
     name: "{{ db_app_user }}"
     host: "{{ web_host }}"
     password: "{{ db_app_password }}"
@@ -130,14 +130,14 @@
 # --- Endurecimiento equivalente a mysql_secure_installation, con modulos ----
 
 - name: Quitar los usuarios anonimos
-  community.mysql.mysql_user:
+  ansible.mariadb.mariadb_user:
     name: ""
     host_all: true
     state: absent
     login_unix_socket: "{{ mariadb_socket }}"
 
 - name: Quitar la base de datos de prueba
-  community.mysql.mysql_db:
+  ansible.mariadb.mariadb_db:
     name: test
     state: absent
     login_unix_socket: "{{ mariadb_socket }}"

@@ -6,10 +6,16 @@ collections:
   - name: ansible.posix
     version: ">=1.5.4"
 
-  # mysql_db, mysql_user, mysql_query
-  - name: community.mysql
-    version: ">=3.10.0"
+  # mariadb_db, mariadb_user, mariadb_query. Nuestro db es MariaDB (no MySQL
+  # real), y ansible.mysql avisa "MariaDB has been detected... use ansible.
+  # mariadb instead", asi que se usa directamente la coleccion especifica.
+  - name: ansible.mariadb
+    version: ">=6.0.2"
 
   # ufw, timezone
+  # Fijada en 9.5.0 (no ">=") porque las versiones 13.x subieron el minimo a
+  # requires_ansible: '>=2.18.0', que no cubre nuestro ansible-core 2.16.19 y
+  # dispara el warning "does not support Ansible version 2.16.19". 9.5.0
+  # todavia declara '>=2.13.0' y no cambia nada de ufw/timezone que usemos.
   - name: community.general
-    version: ">=8.0.0"
+    version: "9.5.0"

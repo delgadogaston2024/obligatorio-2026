@@ -24,7 +24,7 @@
     state: started
 
 - name: Contar las filas de la tabla
-  community.mysql.mysql_query:
+  ansible.mariadb.mariadb_query:
     login_db: "{{ db_name }}"
     query: "SELECT COUNT(*) AS n FROM `{{ db_table }}`"
     login_unix_socket: "{{ mariadb_socket }}"
@@ -50,7 +50,7 @@
   # (mayuscula). Sin alias explicito, el conector devuelve la fila con esa
   # clave tal cual esta definida en el catalogo, no como se escribio en el
   # SELECT, y ".host" en minuscula falla mas abajo.
-  community.mysql.mysql_query:
+  ansible.mariadb.mariadb_query:
     login_db: mysql
     query: "SELECT host AS host FROM mysql.user WHERE user = %s"
     positional_args:

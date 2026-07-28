@@ -31,5 +31,5 @@ mariadb_schema_file: /usr/local/share/cumples/schema.sql
 
 db_packages:
   - mariadb-server
-  - mariadb-client      # community.mysql invoca el binario mysql para state=import
-  - python3-pymysql     # requerido por todos los modulos community.mysql
+  - mariadb-client      # ansible.mariadb invoca el binario mysql para state=import
+  - python3-pymysql     # requerido por todos los modulos ansible.mariadb

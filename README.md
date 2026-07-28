@@ -47,7 +47,7 @@ ansible-galaxy collection install -r requirements.yml
 | Colección | Para qué se usa |
 |---|---|
 | `ansible.posix` | `firewalld`, `firewalld_info`, `seboolean`, `authorized_key` |
-| `community.mysql` | `mysql_db`, `mysql_user`, `mysql_query` |
+| `ansible.mariadb` | `mariadb_db`, `mariadb_user`, `mariadb_query` |
 | `community.general` | `ufw`, `timezone` |
 
 ## Cómo se ejecuta
