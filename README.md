@@ -107,6 +107,7 @@ roles/
   validacion/            comprobaciones del resultado
 docs/
   INSTALL.md             preparación inicial y frontera con el playbook
+  FAST-INSTALL.md        lo mismo, como un solo comando encadenado
   uso-de-ia.md           citación del uso de IA
   modificacion-individual.md  guía para la evaluación individual
   evidencias/            logs de las corridas y capturas
