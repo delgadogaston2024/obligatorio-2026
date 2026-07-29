@@ -23,8 +23,8 @@ git config user.email "correo@ort.edu.uy"
 # 2. Hacer el cambio en el repositorio (no en el servidor)
 
 # 3. Aplicarlo y verificar que sigue siendo idempotente
-ansible-playbook site.yml          # aplica el cambio: changed >= 1
-ansible-playbook site.yml          # verifica idempotencia: changed=0
+ansible-playbook despliegue.yml          # aplica el cambio: changed >= 1
+ansible-playbook despliegue.yml          # verifica idempotencia: changed=0
 
 # 4. Commit individual
 git commit -am "individual: <qué hace y por qué mantiene la idempotencia>"
