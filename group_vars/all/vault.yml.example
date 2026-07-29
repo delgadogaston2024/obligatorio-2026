@@ -21,4 +21,4 @@
 # asi que los playbooks corren sin pedir la passphrase.
 
 # Password del usuario de MariaDB que usa la aplicacion.
-vault_db_app_password: "CAMBIAR-POR-UNA-PASSWORD-REAL"
+vault_db_app_password: "password"

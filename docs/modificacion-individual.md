@@ -44,14 +44,6 @@ corrida detecta que faltan filas, reimporta el esquema, y el `INSERT IGNORE` sob
 la clave única `(nombre, fecha)` carga solo la nueva. La validación también se
 ajusta sola.
 
-Es la modificación más limpia y la más fácil de defender: se toca **una** línea de
-variables y el sistema se acomoda. Justamente por eso es la que menos "impresiona",
-así que conviene explicar en el commit por qué el diseño permite eso.
-
-**Cambiar la zona horaria o el orden de la consulta.** Un cambio de `zona_horaria`,
-o hacer que la lista se ordene alfabéticamente en vez de por fecha, tocando el
-`ORDER BY` del template `cumple.php.j2`.
-
 ### Bajo riesgo, más visible
 
 **Agregar una columna a la tabla.** Por ejemplo `apodo VARCHAR(50)`. Hay que
