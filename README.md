@@ -217,4 +217,4 @@ Declarado en [docs/uso-de-ia.md](docs/uso-de-ia.md), como pide la letra.
 | Integrante |
 |---|
 | Gastón Delgado |
-| Renzo Moretti  |
+| Renzo Moretti 3567195  |
