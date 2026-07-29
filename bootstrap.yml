@@ -17,8 +17,6 @@
 # canal de acceso. Todo lo que hace este playbook esta documentado en
 # docs/INSTALL.md como requisito previo.
 
-- ansible.builtin.import_playbook: preguntar_ips.yml
-
 - name: Preflight en el nodo de control
   hosts: localhost
   connection: local

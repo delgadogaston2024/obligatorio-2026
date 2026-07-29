@@ -74,14 +74,6 @@ entre `< >`**: en bash esos caracteres son redirección de entrada/salida, así 
 un valor literal como `<usuario_existente>` no da un error de Ansible sino
 `bash: syntax error near unexpected token`. Detalle completo en `docs/INSTALL.md`.
 
-Sobre el paso 1: si el inventario ya tiene la IP real de cada servidor (como en
-este repo), ni `bootstrap.yml` ni `site.yml` preguntan nada. La pregunta sólo
-aparece si el inventario quedó con el placeholder o vacío -- por ejemplo, para
-reusar este mismo repo contra otro par de VMs sin tocar el archivo. Para fijar
-otra IP sin editarlo y sin que pregunte: `-e ip_web=... -e ip_db=...` en el
-comando de `bootstrap.yml` o `site.yml` (IPs reales, no entre `< >`). Ver
-`docs/INSTALL.md`, punto 5.
-
 La aplicación queda en `http://172.18.3.119/` (la IP de `web`).
 
 Comandos auxiliares:

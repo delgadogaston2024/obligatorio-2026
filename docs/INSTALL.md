@@ -118,26 +118,14 @@ Son los dos únicos valores que dependen del entorno. Importa no invertirlos: el
 host `web` es la VM CentOS y el host `db` la VM Ubuntu. Si se invierten, el rol
 `common` lo detecta en la primera tarea y corta con un mensaje explícito.
 
-Hay dos formas de dejarlas puestas, y no son excluyentes:
-
 ```bash
 nano inventory/hosts.ini
 ```
 
 Esto queda escrito en el repo, así que sirve también para el próximo despliegue
-contra las mismas VMs. **Si el archivo ya tiene la IP real de cada servidor,
-`bootstrap.yml`/`site.yml` no preguntan nada** al arrancar: la pregunta (la hace
-`preguntar_ips.yml`, importado como primer play de los dos) sólo aparece cuando
-el inventario todavía tiene el placeholder o quedó vacío -- por ejemplo, para
-reusar este mismo repo contra **otro** par de VMs sin editar el archivo.
-
-Para fijar otra IP sin tocar el inventario y sin que pregunte nada -- por
-ejemplo, al capturar las evidencias, para que el log quede limpio -- se agrega
-`-e ip_web=... -e ip_db=...` (sin `< >`: en bash son redirección de
-entrada/salida, no texto literal) al comando de `bootstrap.yml` o `site.yml`
-del paso que corresponda (6 y 7 respectivamente). **Este paso 5 es sólo para
-dejar las IPs en el inventario: todavía no hay que ejecutar ningún
-`ansible-playbook`.** Eso empieza recién en el paso 6.
+contra las mismas VMs. **Este paso 5 es sólo para dejar las IPs en el
+inventario: todavía no hay que ejecutar ningún `ansible-playbook`.** Eso
+empieza recién en el paso 6.
 
 ### 6. Correr el bootstrap
 
@@ -149,12 +137,6 @@ ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
 - `-K` pide el password de `sudo`
 - `bootstrap_ssh_user` es el usuario que ya existe en las VMs (de nuevo, sin
   `< >`: mismo problema que en el punto 5)
-
-Antes de pedir esos dos passwords, también resuelve la IP de cada VM: si
-`inventory/hosts.ini` ya tiene la IP real no pregunta nada; si no, la pide. Para
-fijar otra IP sin tocar el archivo: agregar `-e ip_web=172.18.3.119 -e
-ip_db=172.18.3.120` al comando de arriba (IPs reales, no entre `< >`, por la
-misma razón que arriba).
 
 Su primera tarea instala `sshpass` en el nodo de control (necesario para el
 `-k`/`-K` de este mismo comando) en un play local que no necesita SSH todavía,
@@ -192,12 +174,8 @@ que la evidencia de idempotencia sea un log limpio.
 ### 7. Desplegar
 
 ```bash
-ansible-playbook site.yml -e ip_web=172.18.3.119 -e ip_db=172.18.3.120
+ansible-playbook site.yml
 ```
-
-(IPs reales, sin `< >`: en bash son redirección, no texto literal.) Este paso
-con `-e` es opcional: si el inventario ya tiene las IPs correctas,
-`ansible-playbook site.yml` a secas no pregunta nada tampoco.
 
 ## Verificación manual
 
@@ -218,17 +196,11 @@ navegador de Windows.
 
 ## Captura de evidencias
 
-Con `-e ip_web=... -e ip_db=...` en las cuatro corridas: así ninguna se detiene a
-preguntar la IP y el log queda limpio de principio a fin.
-
 ```bash
-IP_WEB=172.18.3.119
-IP_DB=172.18.3.120
-
-ansible-playbook site.yml    -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/01-primera-corrida.txt
-ansible-playbook site.yml    -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/02-segunda-corrida.txt
-ansible-playbook site.yml --check --diff -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/03-check-mode.txt
-ansible-playbook validar.yml -e ip_web=$IP_WEB -e ip_db=$IP_DB | tee docs/evidencias/04-validaciones.txt
+ansible-playbook site.yml                | tee docs/evidencias/01-primera-corrida.txt
+ansible-playbook site.yml                | tee docs/evidencias/02-segunda-corrida.txt
+ansible-playbook site.yml --check --diff | tee docs/evidencias/03-check-mode.txt
+ansible-playbook validar.yml             | tee docs/evidencias/04-validaciones.txt
 git log --oneline --graph    > docs/evidencias/git-log.txt
 ```
 
