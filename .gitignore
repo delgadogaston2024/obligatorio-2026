@@ -1,6 +1,4 @@
-# Secretos. La letra prohibe explicitamente versionar contrasenas reales y
-# claves privadas: esto es la segunda red de contencion, la primera es que la
-# passphrase del vault vive en ~/.ansible/, fuera del repositorio.
+# Gitgnore para proyectos de Ansible
 vault_pass*
 .vault_pass*
 group_vars/all/vault_plain.yml
@@ -9,11 +7,8 @@ group_vars/all/vault_plain.yml
 id_rsa*
 id_ed25519*
 
-# Colecciones bajadas por ansible-galaxy: se declaran en requirements.yml, no
-# se versionan.
 collections/
 
-# Ruido
 *.retry
 __pycache__/
 *.pyc

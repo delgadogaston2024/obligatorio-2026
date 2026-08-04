@@ -11,13 +11,9 @@ apache_group: apache
 app_root: /var/www/html/cumples
 app_entry_file: cumple.php
 
-# Las credenciales de la base viven FUERA del DocumentRoot, para que ninguna URL
-# pueda llegar a servirlas si algun dia PHP deja de interpretar el archivo.
 app_private_dir: /var/www/private/cumples
 app_config_file: db_config.php
 
-# En RHEL 9 / CentOS Stream 9 no existe mod_php: "dnf install php" trae php-fpm y
-# httpd le hace proxy. Hay que habilitar y arrancar los dos servicios.
 web_packages:
   - httpd
   - php

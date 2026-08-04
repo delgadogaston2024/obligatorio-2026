@@ -1,12 +1,7 @@
 ---
 # Playbook principal del obligatorio.
-#
-#   ansible-playbook site.yml
-#
+# ansible-playbook despliegue.yml
 # Requiere que bootstrap.yml se haya corrido una vez. Ver docs/INSTALL.md.
-#
-# En cada play el rol de firewall va DESPUES del rol funcional a proposito: si
-# algo falla a mitad de camino, no nos quedamos sin SSH antes de haber terminado.
 
 - name: Preparacion comun de los dos servidores
   hosts: servidores

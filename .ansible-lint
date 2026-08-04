@@ -4,10 +4,4 @@ exclude_paths:
   - docs/
 
 skip_list:
-  # Los dos unicos usos de command del proyecto estan justificados y
-  # documentados en el README:
-  #   - "httpd -t": no se puede usar validate: httpd -t -f %s en el template del
-  #     VirtualHost, porque lo valida como si fuera el httpd.conf principal.
-  #   - "ufw status verbose": no existe un modulo ufw_info.
-  # Los dos son de solo lectura y llevan changed_when: false.
   - command-instead-of-module

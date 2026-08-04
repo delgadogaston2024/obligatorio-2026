@@ -1,13 +1,4 @@
 <?php
-// ARCHIVO GENERADO POR ANSIBLE - no editar en el servidor.
-// Origen: roles/webapp/templates/db_config.php.j2
-//
-// El cumple.php original traia las credenciales hardcodeadas, algo que la letra
-// prohibe versionar. Aca se generan desde variables, y la password real sale del
-// vault cifrado (group_vars/all/vault.yml).
-//
-// Este archivo vive FUERA del DocumentRoot a proposito: si algun dia httpd deja
-// de interpretar PHP, ninguna URL puede llegar a servir estas credenciales.
 
 $DB_HOST  = '{{ db_host }}';
 $DB_PORT  = {{ db_port }};

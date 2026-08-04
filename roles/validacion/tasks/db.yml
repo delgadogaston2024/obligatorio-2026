@@ -15,8 +15,6 @@
       journalctl -u mariadb -n 50
 
 - name: Confirmar que MariaDB escucha en la IP del servidor y no en 127.0.0.1
-  # Conectarse a una IP concreta solo funciona si hay un socket escuchando en esa
-  # direccion. Es la prueba de que el drop-in del bind-address se aplico.
   ansible.builtin.wait_for:
     host: "{{ db_host }}"
     port: "{{ db_port }}"
@@ -46,10 +44,6 @@
       el playbook para que las cargue.
 
 - name: Consultar desde donde puede conectarse el usuario de la aplicacion
-  # mysql.user es una vista de compatibilidad cuya columna real es "Host"
-  # (mayuscula). Sin alias explicito, el conector devuelve la fila con esa
-  # clave tal cual esta definida en el catalogo, no como se escribio en el
-  # SELECT, y ".host" en minuscula falla mas abajo.
   ansible.mariadb.mariadb_query:
     login_db: mysql
     query: "SELECT host AS host FROM mysql.user WHERE user = %s"
@@ -61,8 +55,6 @@
   check_mode: false
 
 - name: Confirmar que el usuario de la aplicacion solo entra desde el servidor web
-  # El GRANT tiene que ser para la IP de web, no para '%'. Que exista el usuario
-  # no alcanza: si quedo abierto a cualquier origen, la consigna no se cumple.
   ansible.builtin.assert:
     that:
       - r_usuario.query_result[0] | length == 1
@@ -74,9 +66,6 @@
       y deberia estarlo solo desde {{ web_host }}.
 
 - name: Leer el estado de UFW
-  # Segunda y ultima tarea del proyecto que usa command. Es de solo lectura, y no
-  # existe un modulo ufw_info (al contrario de firewalld_info). Sirve tambien como
-  # evidencia legible en el log de la entrega.
   ansible.builtin.command:
     cmd: ufw status verbose
   changed_when: false

@@ -1,21 +1,13 @@
 ---
 # Se corre UNA SOLA VEZ, antes de site.yml, usando el usuario que ya existe en
 # las VMs y su password:
-#
-#   ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
-#
-#     -k  pide el password de SSH
-#     -K  pide el password de sudo
-#     (reemplazar "sysadmin" por el usuario real, sin < >: en bash esos
-#      caracteres son redireccion de entrada/salida, no texto literal)
+# ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
+# -k  pide el password de SSH
+# -K  pide el password de sudo
 #
 # Deja instalada la clave publica del nodo de control y sudo sin password, para
-# que site.yml corra despues sin ningun prompt. Eso no es cosmetico: es condicion
+# que despliegue.yml corra despues sin ningun prompt. Eso no es cosmetico: es condicion
 # necesaria para que la evidencia de idempotencia salga limpia.
-#
-# La letra prohibe cambios manuales POSTERIORES al despliegue, no preparar el
-# canal de acceso. Todo lo que hace este playbook esta documentado en
-# docs/INSTALL.md como requisito previo.
 
 - name: Preflight en el nodo de control
   hosts: localhost
@@ -24,21 +16,12 @@
   tags: [always]
   tasks:
     - name: Instalar sshpass en el nodo de control
-      # Play local (connection: local), asi que no necesita SSH todavia: se
-      # puede instalar aca mismo antes de que las tareas de mas abajo usen
-      # -k/-K. Sin esto, esas tareas fallan con "you must install the sshpass
-      # program" y habria que instalarlo a mano antes de poder arrancar.
       ansible.builtin.dnf:
         name: sshpass
         state: present
       become: true
 
     - name: Registrar el fingerprint SSH de cada servidor antes de conectar
-      # sshpass no puede responder el prompt interactivo "are you sure you
-      # want to continue connecting" (eso es lo que separa "-k" de una clave):
-      # si el host no esta todavia en known_hosts, la conexion falla directo
-      # con "Host Key checking is enabled and sshpass does not support this",
-      # sin llegar siquiera a pedir la password.
       ansible.builtin.known_hosts:
         name: "{{ hostvars[item].ansible_host }}"
         key: "{{ lookup('ansible.builtin.pipe', 'ssh-keyscan -T 5 ' + hostvars[item].ansible_host) }}"
@@ -67,14 +50,9 @@
   become: true
   gather_facts: true
   vars:
-    # Un ansible_user de group_vars le gana a la opcion -u de la linea de
-    # comandos, asi que el usuario inicial hay que forzarlo desde play vars.
     ansible_user: "{{ bootstrap_ssh_user }}"
   tasks:
     - name: Asegurar que existe el grupo de administracion del SO
-      # No dar por sentado que "sudo" (Ubuntu) o "wheel" (RHEL) ya existe: en
-      # imagenes minimas puede faltar, y ansible.builtin.user no crea grupos
-      # por si solo, falla con "Group ... does not exist".
       ansible.builtin.group:
         name: "{{ admin_group }}"
         state: present
@@ -89,9 +67,6 @@
         state: present
 
     - name: Instalar la clave publica del nodo de control
-      # Se corre tambien contra el propio nodo de control: esta en su inventario,
-      # asi que Ansible le abre una conexion SSH a si mismo. Sin esto, site.yml
-      # falla en Gathering Facts con "Permission denied (publickey)".
       ansible.posix.authorized_key:
         user: "{{ bootstrap_user }}"
         key: "{{ lookup('ansible.builtin.file', bootstrap_pubkey_file) }}"
@@ -99,15 +74,11 @@
         exclusive: false
 
     - name: Comprobar si visudo esta disponible para validar el sudoers
-      # Ubuntu 26 usa sudo-rs, que puede no traer visudo en la misma ruta.
       ansible.builtin.stat:
         path: /usr/sbin/visudo
       register: r_visudo
 
     - name: Habilitar sudo sin password para el usuario de automatizacion
-      # Drop-in en sudoers.d y de una sola linea: en sudoers gana la ultima
-      # coincidencia, y sudo-rs puede ignorar en silencio directivas Defaults
-      # que no soporta. El nombre no puede llevar punto ni tilde o sudo lo ignora.
       ansible.builtin.copy:
         content: "{{ bootstrap_user }} ALL=(ALL) NOPASSWD: ALL\n"
         dest: /etc/sudoers.d/90-ansible

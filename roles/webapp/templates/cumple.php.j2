@@ -1,17 +1,4 @@
 <?php
-// ARCHIVO GENERADO POR ANSIBLE - no editar en el servidor.
-// Origen: roles/webapp/templates/cumple.php.j2
-//
-// Se mantiene lo mas cerca posible del cumple.php original de dbappphp. Los
-// cambios son solo los necesarios:
-//   1. Las credenciales salen de un archivo aparte, fuera del DocumentRoot, en
-//      vez de estar escritas en el codigo.
-//   2. El nombre de la tabla es el real ({{ db_table }}). El original consultaba
-//      "cumpleaños", una tabla que el .sql nunca crea.
-//   3. Si falla la conexion, el detalle va al log de Apache en vez de imprimirse:
-//      el mensaje de mysqli incluye usuario y host, y esta pagina es justo la que
-//      va en las capturas de la entrega.
-//   4. Charset utf8mb4 explicito, para que la ñ de "Cumpleaños" se vea bien.
 
 require '{{ app_private_dir }}/{{ app_config_file }}';
 

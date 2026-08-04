@@ -1,8 +1,4 @@
 ---
-# Cantidad de filas que tiene que haber en la tabla. Se deriva de la variable de
-# datos, asi que agregar una persona a cumpleanios_seed alcanza para que la
-# proxima corrida vuelva a importar el esquema y cargue solo la fila nueva.
 cumpleanios_filas_esperadas: "{{ cumpleanios_seed | length }}"
 
-# La app solo lee. Un GRANT de SELECT es todo lo que necesita.
 db_app_priv: "SELECT"

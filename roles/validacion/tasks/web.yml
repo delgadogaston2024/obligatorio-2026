@@ -18,9 +18,6 @@
       systemctl status php-fpm httpd
 
 - name: Confirmar que SELinux sigue en enforcing
-  # Se valida explicitamente porque la tentacion de "arreglar" el error de
-  # conexion con setenforce 0 es enorme, y desactivarlo seria una perdida de
-  # puntos en la defensa. La solucion correcta es el booleano de abajo.
   ansible.builtin.assert:
     that:
       - ansible_facts['selinux']['status'] == 'enabled'
@@ -31,9 +28,6 @@
       No hay que desactivarlo: el booleano httpd_can_network_connect_db alcanza.
 
 - name: Leer el booleano de SELinux que habilita la conexion a la base remota
-  # Con slurp en vez de "getsebool", para no usar command donde hay otra opcion.
-  # El archivo tiene dos campos: valor actual y valor pendiente. Los dos deben
-  # ser 1; si el pendiente es 1 y el actual 0, falto el persistent/reload.
   ansible.builtin.slurp:
     src: /sys/fs/selinux/booleans/httpd_can_network_connect_db
   register: r_booleano
@@ -50,8 +44,6 @@
       Apache no lo menciona: hay que mirar ausearch -m avc -ts recent
 
 - name: Confirmar que el servidor web alcanza el 3306 del servidor de base de datos
-  # Esta tarea corre EN web, asi que atraviesa el UFW de db de verdad. Es la
-  # prueba de que la conexion es remota, no un localhost disfrazado.
   ansible.builtin.wait_for:
     host: "{{ db_host }}"
     port: "{{ db_port }}"
@@ -85,12 +77,6 @@
          | map(attribute='ports') | flatten | list }}
 
 # --- Prueba de punta a punta ----------------------------------------------
-# La validacion mas importante de todo el proyecto.
-#
-# delegate_to al servidor de base de datos NO es un detalle: el nodo de control es
-# la propia VM CentOS, asi que un uri desde localhost saldria por la interfaz loop
-# sin pasar por firewalld y daria un falso positivo con el puerto 80 cerrado.
-# Pegandole desde db se prueba tambien la regla de firewalld.
 
 - name: Pedir la pagina de la aplicacion desde el servidor de base de datos
   ansible.builtin.uri:

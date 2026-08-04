@@ -1,13 +1,5 @@
 ---
 # UFW en el servidor de base de datos.
-#
-# EL ORDEN DE ESTE ARCHIVO NO ES NEGOCIABLE. UFW aplica la politica por defecto
-# en el momento en que se habilita. Si "state: enabled" corre antes de la regla de
-# SSH, el "deny incoming" corta la sesion SSH de Ansible en el acto, la tarea
-# queda colgada y el servidor queda inaccesible por red: hay que entrar por la
-# consola de la VM a correr "ufw disable".
-#
-# Por el mismo motivo nunca se usa "ufw reset" dentro de un play.
 
 - name: Instalar UFW
   ansible.builtin.apt:
@@ -21,10 +13,6 @@
     proto: tcp
 
 - name: Permitir MariaDB unicamente desde el servidor web
-  # src limita la regla a la IP del server de aplicacion, que es exactamente lo
-  # que pide la letra: el puerto 3306 no queda abierto a la red.
-  # Sin "comment:" a proposito: rompe la idempotencia en varias versiones de
-  # community.general, que no lo leen de vuelta al comparar reglas.
   community.general.ufw:
     rule: allow
     port: "{{ db_port }}"
@@ -42,7 +30,5 @@
     policy: allow
 
 - name: Activar UFW
-  # Ultimo paso, con las reglas ya cargadas. Tambien deja el servicio habilitado
-  # al arranque, asi que no hace falta una tarea de systemd aparte.
   community.general.ufw:
     state: enabled

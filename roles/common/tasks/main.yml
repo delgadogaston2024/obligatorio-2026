@@ -51,13 +51,12 @@
   when: ansible_facts['os_family'] == 'RedHat'
 
 - name: Actualizar el indice de paquetes en Ubuntu
-  # changed_when: false a proposito. Refrescar el indice no modifica el estado del
-  # servidor, y sin esto la segunda corrida reportaria "changed" apenas pase la
-  # hora de cache_valid_time, arruinando la evidencia de idempotencia.
   ansible.builtin.apt:
+    name: "*"
+    state: latest
     update_cache: true
-    cache_valid_time: 3600
-  changed_when: false
+    autoremove: true
+    changed_when: false
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Instalar paquetes base en Ubuntu

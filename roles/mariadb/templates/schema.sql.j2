@@ -1,17 +1,3 @@
--- ARCHIVO GENERADO POR ANSIBLE - no editar en el servidor.
--- Origen: roles/mariadb/templates/schema.sql.j2
---
--- Reescritura de dbappphp/cumpleanios.sql, que no se podia usar tal cual:
---
---   1. Su primera linea, "DROP DATABASE cumples IF EXISTS;", es sintaxis
---      invalida en MariaDB (el orden correcto es DROP DATABASE IF EXISTS).
---      Tal cual estaba, el script fallaba en la linea 1.
---   2. Aun corregido, un DROP DATABASE en cada corrida es lo contrario de la
---      idempotencia que exige la letra: borraria los datos y reportaria cambios
---      para siempre.
---
--- Este script se puede correr N veces y el estado final es identico.
-
 CREATE DATABASE IF NOT EXISTS `{{ db_name }}`
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
