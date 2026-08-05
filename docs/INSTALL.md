@@ -1,19 +1,5 @@
 # Preparación inicial
 
-## Qué se hace una vez y qué hace el playbook
-
-| Preparación inicial (una vez, documentada acá) | Lo hace el playbook, sin excepción |
-|---|---|
-| Las dos VMs existen, con SO, hostname e IP | `httpd`, `php`, `php-fpm`, `php-mysqlnd`, `mariadb-server` |
-| `sshd` activo y un usuario con `sudo` | Habilitar y arrancar los servicios con systemd |
-| `dnf install ansible-core git` en la VM CentOS | Reglas de firewalld y de UFW |
-| `ansible-galaxy collection install -r requirements.yml` | Base de datos, tabla, datos iniciales y usuario de la app |
-| Par de claves SSH en el nodo de control | `bind-address` de MariaDB |
-| Archivo de passphrase del vault | Booleano de SELinux |
-| `git clone` de este repositorio | Despliegue del `.php` desde template |
-| `bootstrap.yml` (usuario `ansible`, clave, sudoers) | Zona horaria `America/Montevideo` y NTP |
-| | Validaciones del resultado |
-
 ## Paso a paso
 
 Los pasos van en orden y no son intercambiables.
