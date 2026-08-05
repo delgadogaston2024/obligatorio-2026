@@ -1,9 +1,5 @@
 # Preparación inicial
 
-## Paso a paso
-
-Los pasos van en orden y no son intercambiables.
-
 ### 1. Instalar Ansible en el nodo de control
 
 El nodo de control es la **VM CENTOS / DB**, la misma que después será el
