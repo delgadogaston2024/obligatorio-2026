@@ -2,12 +2,12 @@
 # Variables compartidas por los dos servidores.
 # Todo lo que cambia entre equipos se toca aca, no dentro de los roles.
 
-# Usuario de automatizacion. Lo crea bootstrap.yml y es el que usa site.yml.
-bootstrap_user: ansible
-ansible_user: "{{ bootstrap_user }}"
+# Usuario de automatizacion. Lo crea requisito.yml y es el que usa despliegue.yml.
+requisito_user: ansible
+ansible_user: "{{ requisito_user }}"
 ansible_python_interpreter: /usr/bin/python3
 
-bootstrap_pubkey_file: "{{ lookup('ansible.builtin.env', 'HOME') }}/.ssh/id_ed25519.pub"
+requisito_pubkey_file: "{{ lookup('ansible.builtin.env', 'HOME') }}/.ssh/id_ed25519.pub"
 
 zona_horaria: America/Montevideo
 

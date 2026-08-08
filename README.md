@@ -53,7 +53,7 @@ nano group_vars/all/vault.yml
 ansible-vault encrypt group_vars/all/vault.yml
 
 # 3. Preparar el acceso de Ansible a los dos servidores (una sola vez)
-ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=(usuario-existente-en-ambos-equipo)
+ansible-playbook requisito.yml -k -K -e requisito_ssh_user=(usuario-existente-en-ambos-equipo)
 
 # 4. Desplegar todo
 ansible-playbook despliegue.yml
@@ -66,10 +66,10 @@ La aplicación queda en `http://IP-DE-WEB/` (la IP de `web`).
 Comandos auxiliares:
 
 ```bash
-ansible-playbook site.yml --check --diff   # simulacro, sin tocar nada
+ansible-playbook despliegue.yml --check --diff   # simulacro, sin tocar nada
 ansible-playbook validar.yml               # solo las validaciones
-ansible-playbook site.yml -t db            # solo el servidor de base de datos
-ansible-playbook site.yml -t web           # solo el servidor de aplicación
+ansible-playbook despliegue.yml -t db            # solo el servidor de base de datos
+ansible-playbook despliegue.yml -t web           # solo el servidor de aplicación
 ```
 
 ## Estructura del repositorio
@@ -77,9 +77,9 @@ ansible-playbook site.yml -t web           # solo el servidor de aplicación
 ```
 ansible.cfg              inventario, vault, pipelining
 requirements.yml         colecciones necesarias
-bootstrap.yml            preparación del acceso (se corre una sola vez)
-site.yml                 playbook principal
-validar.yml              validaciones (site.yml lo importa al final)
+requisito.yml            preparación del acceso (se corre una sola vez)
+despliegue.yml            playbook principal
+validar.yml              validaciones (despliegue.yml lo importa al final)
 inventory/hosts.ini      hosts "web" y "db" dentro del grupo [servidores]
 group_vars/
   all/main.yml           variables de la aplicación y de la base

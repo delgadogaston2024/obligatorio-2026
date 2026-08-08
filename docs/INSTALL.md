@@ -17,7 +17,7 @@ ssh-keygen -t ed25519 -C "ansible@web" -N ""
 ```
 
 La clave privada queda en `~/.ssh/id_ed25519` y **nunca** entra al repositorio.
-`bootstrap.yml` instala la pública en los dos servidores.
+`requisito.yml` instala la pública en los dos servidores.
 
 ### 3. Clonar el repositorio e instalar las colecciones
 
@@ -59,15 +59,15 @@ Son los dos únicos valores que dependen del entorno.
 nano inventory/hosts.ini
 ```
 
-### 6. Correr el bootstrap
+### 6. Correr el requisito
 
 ```bash
-ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
+ansible-playbook requisito.yml -k -K -e requisito_ssh_user=sysadmin
 ```
 
 - `-k` pide el password de SSH
 - `-K` pide el password de `sudo`
-- `bootstrap_ssh_user` es el usuario que ya existe en las VMs
+- `requisito_ssh_user` es el usuario que ya existe en las VMs
 
 Su primera tarea instala `sshpass` en el equipo WEB (necesario para el
 `-k`/`-K` de este mismo comando) en un play local que no necesita SSH todavía.
@@ -109,9 +109,9 @@ navegador.
 ## Captura de evidencias
 
 ```bash
-ansible-playbook site.yml                | tee docs/evidencias/01-primera-corrida.txt
-ansible-playbook site.yml                | tee docs/evidencias/02-segunda-corrida.txt
-ansible-playbook site.yml --check --diff | tee docs/evidencias/03-check-mode.txt
+ansible-playbook despliegue.yml                | tee docs/evidencias/01-primera-corrida.txt
+ansible-playbook despliegue.yml                | tee docs/evidencias/02-segunda-corrida.txt
+ansible-playbook despliegue.yml --check --diff | tee docs/evidencias/03-check-mode.txt
 ansible-playbook validar.yml             | tee docs/evidencias/04-validaciones.txt
 git log --oneline --graph    > docs/evidencias/git-log.txt
 ```

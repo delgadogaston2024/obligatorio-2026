@@ -1,7 +1,7 @@
 ---
-# Se corre UNA SOLA VEZ, antes de site.yml, usando el usuario que ya existe en
+# Se corre UNA SOLA VEZ, antes de despliegue.yml, usando el usuario que ya existe en
 # las VMs y su password:
-# ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=sysadmin
+# ansible-playbook requisito.yml -k -K -e requisito_ssh_user=sysadmin
 # -k  pide el password de SSH
 # -K  pide el password de sudo
 #
@@ -31,18 +31,18 @@
     - name: Confirmar que se indico el usuario SSH inicial
       ansible.builtin.assert:
         that:
-          - bootstrap_ssh_user is defined
-          - bootstrap_ssh_user | length > 0
+          - requisito_ssh_user is defined
+          - requisito_ssh_user | length > 0
         fail_msg: >-
           Falta el usuario con el que entrar por primera vez. Correr:
-          ansible-playbook bootstrap.yml -k -K -e bootstrap_ssh_user=<usuario>
+          ansible-playbook requisito.yml -k -K -e requisito_ssh_user=<usuario>
 
     - name: Confirmar que existe la clave publica del nodo de control
       ansible.builtin.assert:
         that:
-          - bootstrap_pubkey_file is file
+          - requisito_pubkey_file is file
         fail_msg: >-
-          No encuentro {{ bootstrap_pubkey_file }}. Generar el par en el nodo de
+          No encuentro {{ requisito_pubkey_file }}. Generar el par en el nodo de
           control con: ssh-keygen -t ed25519 -C "ansible@web" -N ""
 
 - name: Crear el usuario de automatizacion en los dos servidores
@@ -50,7 +50,7 @@
   become: true
   gather_facts: true
   vars:
-    ansible_user: "{{ bootstrap_ssh_user }}"
+    ansible_user: "{{ requisito_ssh_user }}"
   tasks:
     - name: Asegurar que existe el grupo de administracion del SO
       ansible.builtin.group:
@@ -59,7 +59,7 @@
 
     - name: Crear el usuario de automatizacion
       ansible.builtin.user:
-        name: "{{ bootstrap_user }}"
+        name: "{{ requisito_user }}"
         shell: /bin/bash
         groups: "{{ admin_group }}"
         append: true
@@ -68,8 +68,8 @@
 
     - name: Instalar la clave publica del nodo de control
       ansible.posix.authorized_key:
-        user: "{{ bootstrap_user }}"
-        key: "{{ lookup('ansible.builtin.file', bootstrap_pubkey_file) }}"
+        user: "{{ requisito_user }}"
+        key: "{{ lookup('ansible.builtin.file', requisito_pubkey_file) }}"
         state: present
         exclusive: false
 
@@ -80,14 +80,14 @@
 
     - name: Habilitar sudo sin password para el usuario de automatizacion
       ansible.builtin.copy:
-        content: "{{ bootstrap_user }} ALL=(ALL) NOPASSWD: ALL\n"
+        content: "{{ requisito_user }} ALL=(ALL) NOPASSWD: ALL\n"
         dest: /etc/sudoers.d/90-ansible
         owner: root
         group: root
         mode: "0440"
         validate: "{{ '/usr/sbin/visudo -cf %s' if r_visudo.stat.exists else omit }}"
 
-- name: Verificar el acceso sin password que necesita site.yml
+- name: Verificar el acceso sin password que necesita despliegue.yml
   hosts: servidores
   gather_facts: false
   tasks:

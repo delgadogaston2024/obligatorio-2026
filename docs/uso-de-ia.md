@@ -31,11 +31,11 @@ idempotencia se rompe.
 **Cómo se verificó:**
 
 ```bash
-ansible-playbook site.yml --syntax-check
+ansible-playbook despliegue.yml --syntax-check
 ansible-lint
-ansible-playbook site.yml --check --diff        # simulacro
-ansible-playbook site.yml                       # primera corrida real
-ansible-playbook site.yml                       # segunda corrida: changed=0
+ansible-playbook despliegue.yml --check --diff        # simulacro
+ansible-playbook despliegue.yml                       # primera corrida real
+ansible-playbook despliegue.yml                       # segunda corrida: changed=0
 ```
 
 ### 3. Diagnóstico de problemas específicos del entorno
@@ -47,7 +47,7 @@ fallar este despliegue en particular:
 |---|---|
 | CentOS Stream 9 no tiene `mod_php` | `dnf install php` trae `php-fpm`, y hay que habilitar y arrancar **dos** servicios, no uno |
 | `mysql_db state=import` nunca es idempotente | El módulo no puede saber si el script SQL hizo algo, así que reporta `changed` siempre |
-| Una variable de `group_vars` le gana a la opción `-u` | El bootstrap parece ignorar el usuario que se le pasa por línea de comandos |
+| Una variable de `group_vars` le gana a la opción `-u` | El despliegue parece ignorar el usuario que se le pasa por línea de comandos |
 
 **Cómo se verificó:** cada uno de estos puntos se comprobó en las VMs.
 

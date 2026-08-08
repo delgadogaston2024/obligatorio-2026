@@ -1,7 +1,7 @@
 ---
 # Playbook principal del obligatorio.
 # ansible-playbook despliegue.yml
-# Requiere que bootstrap.yml se haya corrido una vez. Ver docs/INSTALL.md.
+# Requiere que requisito.yml se haya corrido una vez. Ver docs/INSTALL.md.
 
 - name: Preparacion comun de los dos servidores
   hosts: servidores

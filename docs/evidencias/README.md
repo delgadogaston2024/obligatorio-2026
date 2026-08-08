@@ -10,9 +10,9 @@ segunda ejecución es idempotente.
 
 | Archivo | Cómo se genera |
 |---|---|
-| `01-primera-corrida.txt` | `ansible-playbook site.yml \| tee docs/evidencias/01-primera-corrida.txt` |
+| `01-primera-corrida.txt` | `ansible-playbook despliegue.yml \| tee docs/evidencias/01-primera-corrida.txt` |
 | `02-segunda-corrida.txt` | mismo comando; el `PLAY RECAP` debe dar `changed=0` en los dos hosts |
-| `03-check-mode.txt` | `ansible-playbook site.yml --check --diff \| tee ...` |
+| `03-check-mode.txt` | `ansible-playbook despliegue.yml --check --diff \| tee ...` |
 | `04-validaciones.txt` | `ansible-playbook validar.yml \| tee ...` |
 | `05-app-navegador.png` | Captura del navegador **en Windows** contra `http://172.18.3.119/` (la IP de `web`), con la barra de direcciones visible en el recorte: es lo que prueba que no es `localhost` |
 | `06-recap-idempotencia.png` | Captura del `PLAY RECAP` de la segunda corrida |
