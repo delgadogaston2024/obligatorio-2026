@@ -15,7 +15,7 @@ admin_group: sudo
 # (1.9.17p2) ya esta instalado en paralelo en /usr/bin/sudo.ws y respeta `-p`
 # literal, asi que apuntamos el become ahi en vez de tocar el alternative del
 # sistema.
-ansible_become_exe: /usr/bin/sudo
+ansible_become_exe: /usr/bin/sudo.ws #para ubuntu 24.04 se debe dejar este comando como ansible_become_exe: /usr/bin/sudo
 
 mariadb_service: mariadb
 mariadb_socket: /run/mysqld/mysqld.sock
