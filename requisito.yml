@@ -9,7 +9,7 @@
 # que despliegue.yml corra despues sin ningun prompt. Eso no es cosmetico: es condicion
 # necesaria para que la evidencia de idempotencia salga limpia.
 
-- name: Preflight en el nodo de control
+- name: Requisitos en el nodo de control
   hosts: localhost
   connection: local
   gather_facts: false

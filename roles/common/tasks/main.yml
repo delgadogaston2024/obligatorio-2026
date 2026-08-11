@@ -50,13 +50,13 @@
     state: present
   when: ansible_facts['os_family'] == 'RedHat'
 
-- name: Actualizar el indice de paquetes en Ubuntu
+- name: Actualizar paquetes en Ubuntu
   ansible.builtin.apt:
     name: "*"
     state: latest
     update_cache: true
     autoremove: true
-    changed_when: false
+  changed_when: false
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Instalar paquetes base en Ubuntu
