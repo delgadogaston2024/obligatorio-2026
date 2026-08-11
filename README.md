@@ -53,13 +53,13 @@ nano group_vars/all/vault.yml
 ansible-vault encrypt group_vars/all/vault.yml
 
 # 3. Preparar el acceso de Ansible a los dos servidores (una sola vez)
-ansible-playbook requisito.yml -k -K -e requisito_ssh_user=(usuario-existente-en-ambos-equipo)
+ansible-playbook requisito.yml -k -K -e requisito_ssh_user="usuario-existente-en-ambos-equipo"
 
 # 4. Desplegar todo
 ansible-playbook despliegue.yml
 ```
 
-Reemplazar `(usuario-existente-en-ambos-equipo)` por el usuario que ya existe en las VMs, **sin dejarlo
+Reemplazar `"usuario-existente-en-ambos-equipo"` por el usuario que ya existe en las VMs, **sin dejarlo
 
 La aplicación queda en `http://IP-DE-WEB/` (la IP de `web`).
 
