@@ -3,9 +3,10 @@
 IMPORTANTE
 ```bash
 Este obligatorio toma como maquina base UBUNTU 26 Y CENTOS 10.
+
 Si usted esta corriendo esto con UBUNTU 24 debe cambiar en host_vars/db.yaml lo siguiente:
 
-Ppara ubuntu 24.04 se debe dejar este comando como ansible_become_exe: /usr/bin/sudo
+Para ubuntu 24.04 se debe dejar este comando como ansible_become_exe: /usr/bin/sudo
 ```
 
 ### 1. Instalar Ansible en el nodo de control
