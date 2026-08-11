@@ -17,7 +17,7 @@ posteriores a la instalación de Ansible.
                  ▼
     ┌────────────────────────┐            ┌────────────────────────┐
     │  web                   │  MySQL     │  db                    │
-    │  CentOS Stream 10       │  :3306     │  Ubuntu Server 26     │
+    │  CentOS Stream 10       │  :3306    │  Ubuntu Server 26      │
     │  Apache + php-fpm      │ ─────────► │  MariaDB               │
     │  firewalld: ssh, http  │            │  UFW: ssh, 3306 (solo  │
     │  SELinux: enforcing    │            │  desde la IP de web)   │
