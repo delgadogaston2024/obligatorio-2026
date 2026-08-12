@@ -33,15 +33,15 @@
 - name: Confirmar que la tabla tiene los datos esperados
   ansible.builtin.assert:
     that:
-      - r_conteo.query_result[0][0].n | int == cumpleanios_seed | length
+      - r_conteo.query_result[0][0].n | int == cumpleanios_efectivos | length
     success_msg: >-
       {{ db_name }}.{{ db_table }} tiene
       {{ r_conteo.query_result[0][0].n }} filas, las esperadas.
     fail_msg: >-
       {{ db_name }}.{{ db_table }} tiene {{ r_conteo.query_result[0][0].n }} filas
-      y se esperaban {{ cumpleanios_seed | length }}. Si se agregaron personas a
-      mano en la base, sobran; si se agregaron a cumpleanios_seed, volver a correr
-      el playbook para que las cargue.
+      y se esperaban {{ cumpleanios_efectivos | length }}. Si se agregaron personas a
+      mano en la base, sobran; si faltan, volver a correr el playbook (con los mismos
+      -e cumpleanio_extra_* si corresponde) para que las cargue.
 
 - name: Consultar desde donde puede conectarse el usuario de la aplicacion
   ansible.mariadb.mariadb_query:

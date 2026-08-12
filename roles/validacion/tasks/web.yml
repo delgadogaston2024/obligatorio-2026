@@ -99,7 +99,7 @@
       - faltantes | length == 0
     success_msg: >-
       La aplicacion responde por HTTP desde otro host y lista las
-      {{ cumpleanios_seed | length }} personas de la base. Despliegue verificado.
+      {{ cumpleanios_efectivos | length }} personas de la base. Despliegue verificado.
     fail_msg: |-
       La pagina responde pero el contenido no es el esperado.
       Faltan en la salida: {{ faltantes | map(attribute='nombre') | join(', ') }}
@@ -109,4 +109,4 @@
         3. ss -ltnp | grep {{ db_port }}       en {{ db_host }}
         4. el GRANT del usuario {{ db_app_user }} para {{ web_host }}
   vars:
-    faltantes: "{{ cumpleanios_seed | rejectattr('nombre', 'in', r_pagina.content) | list }}"
+    faltantes: "{{ cumpleanios_efectivos | rejectattr('nombre', 'in', r_pagina.content) | list }}"

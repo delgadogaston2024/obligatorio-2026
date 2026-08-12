@@ -27,3 +27,15 @@ cumpleanios_seed:
   - { nombre: "Frodo Baggins", fecha: "2005-01-14" }
   - { nombre: "Aragorn", fecha: "2004-02-09" }
   - { nombre: "Arwen Undomiel", fecha: "1994-12-09" }
+
+# Persona opcional por extra-var (-e). Vacios por defecto: no cambia el despliegue.
+cumpleanio_extra_nombre: ""
+cumpleanio_extra_fecha: ""
+
+# Lista que usa mariadb y validacion: seed + persona extra si se pasaron ambos -e.
+cumpleanios_efectivos: >-
+  {{ cumpleanios_seed + (
+       [{'nombre': cumpleanio_extra_nombre, 'fecha': cumpleanio_extra_fecha}]
+       if cumpleanio_extra_nombre | length > 0 and cumpleanio_extra_fecha | length > 0
+       else []
+     ) }}

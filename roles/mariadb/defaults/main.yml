@@ -1,4 +1,4 @@
 ---
-cumpleanios_filas_esperadas: "{{ cumpleanios_seed | length }}"
+cumpleanios_filas_esperadas: "{{ cumpleanios_efectivos | length }}"
 
 db_app_priv: "SELECT"

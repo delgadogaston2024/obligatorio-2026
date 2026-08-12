@@ -44,6 +44,24 @@ corrida detecta que faltan filas, reimporta el esquema, y el `INSERT IGNORE` sob
 la clave única `(nombre, fecha)` carga solo la nueva. La validación también se
 ajusta sola.
 
+**Agregar una persona con extra-var (sin tocar el repo).** Pasar nombre y fecha
+por `-e`; se suman a `cumpleanios_efectivos` y el mismo mecanismo de importación
+controlada carga la fila nueva. Idempotente si se repite la misma corrida con los
+mismos `-e`:
+
+```bash
+ansible-playbook despliegue.yml \
+  -e cumpleanio_extra_nombre="Gaston Delgado" \
+  -e cumpleanio_extra_fecha="1990-05-15"
+ansible-playbook despliegue.yml \
+  -e cumpleanio_extra_nombre="Gaston Delgado" \
+  -e cumpleanio_extra_fecha="1990-05-15"   # changed=0
+```
+
+Si se corre después **sin** los `-e`, la validación esperará solo las filas del
+seed base y fallará si la persona extra sigue en la base. Para dejarla permanente
+sin pasar `-e` en cada corrida, agregarla a `cumpleanios_seed`.
+
 ### Bajo riesgo, más visible
 
 **Agregar una columna a la tabla.** Por ejemplo `apodo VARCHAR(50)`. Hay que

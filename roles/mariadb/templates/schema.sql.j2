@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS `{{ db_table }}` (
   UNIQUE KEY uq_persona (nombre, fecha)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Las filas salen de la variable cumpleanios_seed (group_vars/all/main.yml).
+-- Las filas salen de cumpleanios_efectivos (seed + extra-var opcional).
 INSERT IGNORE INTO `{{ db_table }}` (nombre, fecha) VALUES
-{% for persona in cumpleanios_seed %}
+{% for persona in cumpleanios_efectivos %}
   ('{{ persona.nombre | replace("'", "''") }}', '{{ persona.fecha }}'){{ ';' if loop.last else ',' }}
 {% endfor %}
